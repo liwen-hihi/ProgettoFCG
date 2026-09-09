@@ -6,16 +6,15 @@ cmake --build build
 
 ## Esecuzione:
 ```bash
-cd build
 
-./tappa01
-./tappa02
-./tappa03
-./tappa04
-./tappa05
-./tappa06
-./tappa07
-./tappa08
+./build/tappa01
+./build/tappa02
+./build/tappa03
+./build/tappa04
+./build/tappa05
+./build/tappa06
+./build/tappa07
+./build/tappa08
 ```
 Le tappe non richiedono argomenti aggiuntivi da riga di comando. 
 
