@@ -36,6 +36,13 @@ target_compile_options(common INTERFACE
 # Find OpenGL
 find_package(OpenGL REQUIRED)
 
+
+if(APPLE)
+    target_link_libraries(common INTERFACE
+        ${CORE_GRAPHICS_LIB}
+    )
+endif()
+
 #find coregraphics for raw mouse events in macos
 if(APPLE)
     find_library(CORE_GRAPHICS_LIB CoreGraphics REQUIRED)
