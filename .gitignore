@@ -1,6 +1,9 @@
 build
 out
+spunto
 .cache
 .idea
 .vs
 .vscode
+stages.pdf
+main.cpp
