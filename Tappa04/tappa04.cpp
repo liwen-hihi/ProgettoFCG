@@ -11,14 +11,12 @@
 #include <iostream>
 #include <math.h>
 
-#include <SFML/Graphics.hpp>
 #include <glm/glm.hpp>
 
 #include "../include/matrices.hh"
 #include "../include/mesh.hh"
 #include "../include/hotshaders.hh"
 #include "../include/rawmouse.hh"
-
 
 struct Box
 {
@@ -43,6 +41,47 @@ Box expand_box(const Box& box, float margin)
     };
 }
 
+bool ray_triangle_intersection(
+    const glm::vec3& ray_origin,
+    const glm::vec3& ray_direction,
+    const glm::vec3& v0,
+    const glm::vec3& v1,
+    const glm::vec3& v2)
+{
+    const float EPSILON = 0.000001f;
+
+    glm::vec3 edge1 = v1 - v0;
+    glm::vec3 edge2 = v2 - v0;
+
+    glm::vec3 h = glm::cross(ray_direction, edge2);
+    float a = glm::dot(edge1, h);
+
+    // Il raggio è parallelo al triangolo
+    if (std::abs(a) < EPSILON)
+        return false;
+
+    float f = 1.0f / a;
+
+    glm::vec3 s = ray_origin - v0;
+
+    float u = f * glm::dot(s, h);
+
+    if (u < 0.0f || u > 1.0f)
+        return false;
+
+    glm::vec3 q = glm::cross(s, edge1);
+
+    float v = f * glm::dot(ray_direction, q);
+
+    if (v < 0.0f || u + v > 1.0f)
+        return false;
+
+    float t = f * glm::dot(edge2, q);
+
+    // Intersezione davanti alla telecamera
+    return t > EPSILON;
+}
+
 /////////////////////////////
 // Window and OpenGL setup //
 /////////////////////////////
@@ -55,7 +94,7 @@ public:
     static const int min_window_width = 400;
     static const int min_window_height = 300;
 
-    sf::RenderWindow window;
+    sf::Window window;
 
     Setup ()
     {
@@ -63,6 +102,7 @@ public:
         settings.depthBits = 24;
         settings.stencilBits = 8;
         settings.antiAliasingLevel = 4;
+        settings.attributeFlags = sf::ContextSettings::Attribute::Core;
         settings.majorVersion = 4;
         settings.minorVersion = 1;
 
@@ -158,10 +198,11 @@ private:
     const float normal_fd = 50.0 / 18.0;
     float fd; // focal distance
     float ar; // aspect ratio
+    const glm::vec3 camera_default = {0.0, 0.0, 5.0};
 
     /** Extrinsic camera parameters **/
     // xyz, starting point of dynamic camera position
-    glm::vec3 camera_pos = {0.0, 0.0, 3.0}; // xyz
+    glm::vec3 camera_pos = camera_default; // xyz
     GLint camera_pos_loc;
     // Angles defining the in-place camera rotation
     float phi_deg = 0.0;
@@ -325,158 +366,6 @@ public:
     }
 };
 
-class Menu
-{
-public:
-    sf::RenderWindow& window;
-    sf::Vector2u size_window;
-    sf::RectangleShape sfondo;
-
-private:
-    sf::Font font{"data/GeorgiaLike-Regular.ttf"};
-    unsigned int lv;
-    float width, height;
-    std::vector <sf::RectangleShape> buttons;
-    unsigned int lv_chose = 0;
-
-public:
-    Menu (Setup& s) : window (s.window)
-    {
-        lv = 3;
-        size_window = window.getSize();
-        width = size_window.x /2.f;
-        height = size_window.y /2.f;
-    }
-
-    void reset_size(int w, int h)
-    {
-        if (w < Setup::min_window_width)    w = Setup::min_window_width;
-        if (h < Setup::min_window_height)   h = Setup::min_window_height;
-
-        size_window = {static_cast<unsigned>(w), static_cast<unsigned>(h)};
-        width = w/2.f;
-        height = h/2.f;
-        sf::View view = window.getDefaultView();
-        view.setSize({static_cast<float>(w), static_cast<float>(h)});
-        view.setCenter({w / 2.f, h / 2.f});
-        window.setView(view);
-        if (window.getSize().x != static_cast<unsigned>(w) || window.getSize().y != static_cast<unsigned>(h))
-        {
-            window.setSize({static_cast<unsigned>(w), static_cast<unsigned>(h) });
-        }
-    }
-
-    void draw()
-    {
-        draw_sfondo();
-        draw_button();
-        draw_text();
-    }
-
-    void which_level(sf::Vector2f mousePos)
-    {
-        lv_chose = 0;
-        for(unsigned i=0; i<buttons.size(); i++)
-        {
-            sf::FloatRect bounds = buttons[i].getGlobalBounds();
-            if(bounds.contains(mousePos))
-            {
-                lv_chose = i+1;
-                break;
-            }
-        }
-    }
-
-private:
-    void draw_sfondo()
-    {
-        sfondo.setSize({width, height});
-        sfondo.setPosition({
-            (size_window.x - width) / 2.f,
-            (size_window.y - height) / 2.f
-        });
-        sfondo.setFillColor(sf::Color(128, 128, 128, 255)); // riempimento grigio
-        sfondo.setOutlineColor(sf::Color(139, 69, 19)); // bordo marrone
-        sfondo.setOutlineThickness(5.f); // spessore bordo
-        window.draw(sfondo);
-    }
-
-    void draw_text()
-    {
-        std::vector<std::string> livelli = {"scegli livello"};
-        for(unsigned i=0; i<=lv; i++)
-        {
-            if(i!=0)
-            {
-                std::string temp = std::to_string(i);
-                livelli.push_back(temp);
-            }
-            sf::Text text(font, livelli[i], 30);
-            if(i==0 || i!=lv_chose)
-                text.setFillColor(sf::Color::Blue);
-            else
-                text.setFillColor(sf::Color::Red);
-            if(i==0)
-                text_centre(text, sfondo.getPosition(), {width, height}, false);
-            else
-                text_centre(text, buttons[i-1].getPosition(), buttons[i-1].getSize(), true);
-            window.draw(text);
-        }
-    }
-
-    void draw_button()
-    {
-        buttons.clear();
-        float size = 50.f;
-        float y = sfondo.getPosition().y + sfondo.getSize().y * 3.f / 5.f;
-        float w_sfondo = sfondo.getSize().x;
-        float distanza = (w_sfondo - lv * size) / (lv + 1);
-        for(unsigned i=1; i<=lv; i++)
-        {
-            sf::RectangleShape button;
-            set_button(button, i, size, distanza, y);
-            window.draw(button);
-            buttons.push_back(button);
-        }
-    }
-
-    void set_button(sf::RectangleShape& button, unsigned i, float size, float distanza, float y)
-    {
-        button.setSize({size, size});
-        button.setFillColor(sf::Color::White); // riempimento bianco
-        if(i!=lv_chose)
-            button.setOutlineColor(sf::Color::Yellow); // bordo giallo
-        else
-            button.setOutlineColor(sf::Color::Red); // bordo rosso
-        button.setOutlineThickness(3.f); // spessore bordo
-        sf::FloatRect bounds = button.getLocalBounds();
-        button.setOrigin({
-            bounds.position.x,
-            bounds.position.y + bounds.size.y / 2.f
-        });
-        float x = sfondo.getPosition().x + distanza + (i-1) * (size + distanza);
-        button.setPosition({x, y});
-    }
-
-    // testo, posizione padre di riferimento, size padre, true->1/2 altezza o false->1/4 
-    void text_centre(sf::Text& text, sf::Vector2f padre, sf::Vector2f size, bool mezzo) 
-    {
-        sf::FloatRect bounds = text.getLocalBounds();
-        text.setOrigin({
-            bounds.position.x + bounds.size.x / 2.f,
-            bounds.position.y + bounds.size.y / 2.f
-        });
-        float x = padre.x + size.x / 2.f;   // centro X
-        float y;
-        if(mezzo) 
-            y = padre.y;   // centro Y
-        else
-            y = padre.y + size.y / 4.f;   // 1/4 dall'alto
-            
-        text.setPosition({x, y});
-    }
-};
-
 class GPUMesh
 {
 public:
@@ -539,7 +428,7 @@ public:
     Box world_bounds (const glm::mat4& model) const
     {
         // 8 angoli del bounding box locale
-        glm::vec3 corners[8] = {
+        glm::vec3 spheres[8] = {
             {min_bounds.x, min_bounds.y, min_bounds.z},
             {min_bounds.x, min_bounds.y, max_bounds.z},
             {min_bounds.x, max_bounds.y, min_bounds.z},
@@ -549,12 +438,12 @@ public:
             {max_bounds.x, max_bounds.y, min_bounds.z},
             {max_bounds.x, max_bounds.y, max_bounds.z}
         };
-        glm::vec3 world_min = glm::vec3(model * glm::vec4(corners[0], 1.0f));
+        glm::vec3 world_min = glm::vec3(model * glm::vec4(spheres[0], 1.0f));
         glm::vec3 world_max = world_min;
 
         for (int i = 1; i < 8; ++i)
         {
-            glm::vec3 p = glm::vec3(model * glm::vec4(corners[i], 1.0f));
+            glm::vec3 p = glm::vec3(model * glm::vec4(spheres[i], 1.0f));
             world_min = glm::min(world_min, p);
             world_max = glm::max(world_max, p);
         }
@@ -567,6 +456,9 @@ public:
         glBindVertexArray (vao);
         glDrawElements(GL_TRIANGLES, indices.size (), GL_UNSIGNED_INT, 0);
     }
+
+    std::vector<float> get_points() const { return points;}
+    std::vector<unsigned int> get_indices() const { return indices;}
 
 protected:
     void send_arrays_2a3f ()
@@ -601,11 +493,16 @@ protected:
 class Scene
 {
 public:
+    int level;
     Camera camera;
     Lights lights;
 
     GPUMesh cube;
     GPUMesh bunny;
+    GPUMesh sphere;
+
+    bool sphere_move_on = false;
+    int direzione = -1;
 
 private:
     GLint model_loc;
@@ -613,14 +510,16 @@ private:
     GLint tr_inv_model_loc;
 
     std::vector<Box> collision_boxes;
-    glm::mat4 bunny_model, wall_model;
+    glm::mat4 bunny_model, wall_model, sphere_model;
 
 public:
-    Scene (std::string dirname, fcg::Shaders& shaders) :
+    Scene (std::string dirname, fcg::Shaders& shaders, int n) :
         camera (shaders), lights (shaders),
         cube (dirname + "cube.off"),
-        bunny (dirname + "bunny.off")
+        bunny (dirname + "bunny.off"),
+        sphere (dirname + "sphere.off")
     {
+        level = n;
         locations (shaders);
         build_collision_boxes ();
         camera.set_collision_boxes (collision_boxes);             
@@ -644,6 +543,13 @@ public:
         lights.send_position_relative (camera.inv_v);
     }
 
+    void reload (int n)
+    {
+        level = n;
+        build_collision_boxes ();
+        camera.set_collision_boxes (collision_boxes); 
+    }
+
     void draw ()
     {
         // Feedback di collisione: lampeggia lo sfondo di rosso per il fotogramma in cui
@@ -658,18 +564,140 @@ public:
         // the view-projection matrix is the same for all the scene
         glUniformMatrix4fv(vp_loc, 1, GL_FALSE, &camera.vp[0][0]); // vp = Projection(prospettiva della telecamera) × View(posizione della telecamera)
 
-        draw_bunny ();
-        draw_wall();
+        draw_bunny (bunny_model);
+        if (level == 2)    draw_wall();
+        else if(level == 3)   draw_sphere(sphere_model);
 
         camera.clear_collision_feedback ();
     }
 
-private: 
-    void draw_bunny ()
+    void move_sphere (float delta)
     {
-        glm::mat4 mm = bunny.to_unit_extent;
-        glm::mat3 ti_mm;
-        ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
+        if (!sphere_move_on || direzione == -1)
+            return;
+        else if (direzione == 1)
+        {
+            glm::mat4 translate = fcg::translation (0, delta, 0);
+            sphere_model = translate * sphere_model;
+        }
+        else if (direzione == 2)
+        {
+            glm::mat4 translate = fcg::translation (0, -delta, 0);
+            sphere_model = translate * sphere_model;
+        }
+        else if (direzione == 3)
+        {
+            glm::mat4 translate = fcg::translation (-delta, 0, 0);
+            sphere_model = translate * sphere_model;
+        }
+        else if (direzione == 4)
+        {
+            glm::mat4 translate = fcg::translation (delta, 0, 0);
+            sphere_model = translate * sphere_model;
+        }
+    }
+
+    bool mouse_su_bunny (sf::Vector2i position, sf::Vector2u window_size)
+    {
+        float x =
+            2.0f * static_cast<float>(position.x)
+            / static_cast<float>(window_size.x) - 1.0f;
+
+        float y =
+            1.0f - 2.0f * static_cast<float>(position.y)
+            / static_cast<float>(window_size.y);
+
+        glm::vec4 near_point(x, y, -1.0f, 1.0f);
+        glm::vec4 far_point (x, y,  1.0f, 1.0f);
+
+        glm::mat4 inv_vp = glm::inverse(camera.vp);
+
+        near_point = inv_vp * near_point;
+        far_point  = inv_vp * far_point;
+
+        near_point /= near_point.w;
+        far_point  /= far_point.w;
+
+        glm::vec3 ray_origin = glm::vec3(near_point);
+
+        glm::vec3 ray_direction =
+            glm::normalize(
+                glm::vec3(far_point - near_point)
+            );
+
+        glm::mat4 inv_bunny = glm::inverse(bunny_model); 
+        glm::vec3 local_origin = glm::vec3( inv_bunny * glm::vec4(ray_origin, 1.0f) ); 
+        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_bunny * glm::vec4(ray_direction, 0.0f) ) );
+
+        const auto& points = bunny.get_points(); 
+        const auto& indices = bunny.get_indices(); 
+        for (size_t i = 0; i < indices.size(); i += 3) { 
+            unsigned int i0 = indices[i]; 
+            unsigned int i1 = indices[i + 1]; 
+            unsigned int i2 = indices[i + 2];
+            glm::vec3 v0( points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2] ); 
+            glm::vec3 v1( points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2] ); 
+            glm::vec3 v2( points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2] );
+            if (ray_triangle_intersection( local_origin, local_direction, v0, v1, v2)) 
+                { return true; }
+        }
+
+        return false;
+    }
+
+    bool mouse_su_sphere (sf::Vector2i position, sf::Vector2u window_size)
+    {
+        float x =
+            2.0f * static_cast<float>(position.x)
+            / static_cast<float>(window_size.x) - 1.0f;
+
+        float y =
+            1.0f - 2.0f * static_cast<float>(position.y)
+            / static_cast<float>(window_size.y);
+
+        glm::vec4 near_point(x, y, -1.0f, 1.0f);
+        glm::vec4 far_point (x, y,  1.0f, 1.0f);
+
+        glm::mat4 inv_vp = glm::inverse(camera.vp);
+
+        near_point = inv_vp * near_point;
+        far_point  = inv_vp * far_point;
+
+        near_point /= near_point.w;
+        far_point  /= far_point.w;
+
+        glm::vec3 ray_origin = glm::vec3(near_point);
+
+        glm::vec3 ray_direction =
+            glm::normalize(
+                glm::vec3(far_point - near_point)
+            );
+
+        glm::mat4 inv_sphere = glm::inverse(sphere_model); 
+        glm::vec3 local_origin = glm::vec3( inv_sphere * glm::vec4(ray_origin, 1.0f) ); 
+        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_sphere * glm::vec4(ray_direction, 0.0f) ) );
+
+        const auto& points = sphere.get_points(); 
+        const auto& indices = sphere.get_indices(); 
+        for (size_t i = 0; i < indices.size(); i += 3) { 
+            unsigned int i0 = indices[i]; 
+            unsigned int i1 = indices[i + 1]; 
+            unsigned int i2 = indices[i + 2];
+            glm::vec3 v0( points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2] ); 
+            glm::vec3 v1( points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2] ); 
+            glm::vec3 v2( points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2] );
+            if (ray_triangle_intersection( local_origin, local_direction, v0, v1, v2)) 
+                { return true; }
+        }
+
+        return false;
+    }
+
+private: 
+    void draw_bunny (glm::mat4 bunny_trasforme)
+    {
+        glm::mat4 mm = bunny_trasforme;
+        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
         glUniformMatrix4fv(model_loc, 1, GL_FALSE, &mm[0][0]);
         glUniformMatrix3fv (tr_inv_model_loc, 1, GL_FALSE, &ti_mm[0][0]);
         bunny.draw ();
@@ -677,43 +705,65 @@ private:
     
     void draw_cube (glm::mat4 cube_trasforme)
     {
-        glm::mat4 mm;
-        glm::mat3 ti_mm;
-        mm = cube_trasforme;
-        ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
+        glm::mat4 mm = cube_trasforme;
+        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
         glUniformMatrix4fv(model_loc, 1, GL_FALSE, &mm[0][0]);
         glUniformMatrix3fv (tr_inv_model_loc, 1, GL_FALSE, &ti_mm[0][0]);
         cube.draw ();
     }
 
-    void draw_wall()
+    void draw_wall ()
     {
         draw_cube (wall_model);
+    }
+
+    void draw_sphere (glm::mat4 sphere_trasforme)
+    {
+        glm::mat4 mm = sphere_trasforme;
+        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
+        glUniformMatrix4fv(model_loc, 1, GL_FALSE, &mm[0][0]);
+        glUniformMatrix3fv (tr_inv_model_loc, 1, GL_FALSE, &ti_mm[0][0]);
+        sphere.draw ();
     }
 
     void build_collision_boxes ()
     {
         glm::mat4 scale, translate;
         collision_boxes.clear ();
-
-        bunny_model = bunny.to_unit_extent;
-        float bunny_margin = 0.3f;
+        if (level == 1){
+            translate = fcg::translation (0, 0, 8.0f); // push it away
+        }
+        else{
+            translate = fcg::translation (0, 0, -3.0f); // push it away
+        }
+        bunny_model = translate * bunny.to_unit_extent;
+        float margin = 0.5f;
         Box bunny_box = bunny.world_bounds(bunny_model);
-        bunny_box = expand_box(bunny_box, bunny_margin);
+        bunny_box = expand_box(bunny_box, margin);
         collision_boxes.push_back (bunny_box);
         
-        // Dimensioni del muro: spessore, base, altezza
-        float depth = 2.0f;
-        float width = bunny.extent.x * 1.5;
-        float height = width *(3.0f/4.0f);
-        // draw back wall
-        scale = fcg::scaling (width, height, depth); // flatten the cube!
-        translate = fcg::translation (0, 0, -3.0f); // push it away
-        wall_model = translate * scale * cube.to_unit_extent;
-        float wall_margin = 0.5f;
-        Box wall_box = cube.world_bounds(wall_model);
-        wall_box = expand_box(wall_box, wall_margin);
-        collision_boxes.push_back (wall_box);
+        if (level == 2){
+            // Dimensioni del muro: spessore, base, altezza
+            float depth = 1.0f;
+            float width = bunny.extent.x * 1.5;
+            float height = width *(3.0f/4.0f);
+            // draw back wall
+            scale = fcg::scaling (width, height, depth); // flatten the cube!
+            translate = fcg::translation (0, 0, -1.0f); // push it away
+            wall_model = translate * scale * cube.to_unit_extent;
+            float wall_margin = 1.5f;
+            Box wall_box = cube.world_bounds(wall_model);
+            wall_box = expand_box(wall_box, wall_margin);
+            collision_boxes.push_back (wall_box);
+        }
+        else if (level == 3){
+            translate = fcg::translation (0, 0, -1.0f); // push it away
+            scale = fcg::scaling (1.5f, 1.5f, 1.5f); // flatten the cube!
+            sphere_model = translate * scale * sphere.to_unit_extent;
+            Box sphere_box = sphere.world_bounds(sphere_model);
+            sphere_box = expand_box(sphere_box, margin);
+            collision_boxes.push_back (sphere_box);
+        }
     }
 };
 
@@ -725,7 +775,25 @@ private:
 void handle (const sf::Event::KeyPressed& key, Scene& scene)
 {
     if (key.scancode == sf::Keyboard::Scancode::Escape)
-        exit (0);
+    {
+        std::cout<<"hai chiuso il gioco"<<std::endl;
+        exit(0);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num1)
+    {
+        scene.level = 1;
+        scene.reload(1);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num2)
+    {
+        scene.level = 2;
+        scene.reload(2);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num3)
+    {
+        scene.level = 3;
+        scene.reload(3);
+    }
     else if (key.scancode == sf::Keyboard::Scancode::Right)
     {
         scene.camera.asse = 1;
@@ -746,18 +814,33 @@ void handle (const sf::Event::KeyPressed& key, Scene& scene)
         scene.camera.asse = 2;
         scene.camera.move_start(false);
     }
-    else if (key.scancode == sf::Keyboard::Scancode::NumpadPlus) // allontanare oggetto
+    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
     {
         scene.camera.asse = 3;
         scene.camera.move_start(true);
     }
-    else if (key.scancode == sf::Keyboard::Scancode::NumpadMinus) // avvicinare oggetto
+    else if (key.scancode == sf::Keyboard::Scancode::Enter) // avvicinare oggetto
     {
         scene.camera.asse = 3;
         scene.camera.move_start(false);
     }
+    else if (key.scancode == sf::Keyboard::Scancode::W)
+    {
+        if (scene.sphere_move_on)     scene.direzione = 1;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::S)
+    {
+        if (scene.sphere_move_on)     scene.direzione = 2;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::A)
+    {
+        if (scene.sphere_move_on)     scene.direzione = 3;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::D)
+    {
+        if (scene.sphere_move_on)     scene.direzione = 4;
+    }
 }
-
 
 void handle (const sf::Event::KeyReleased& key, Scene& scene)
 {
@@ -765,24 +848,22 @@ void handle (const sf::Event::KeyReleased& key, Scene& scene)
         || key.scancode == sf::Keyboard::Scancode::Left
         || key.scancode == sf::Keyboard::Scancode::Up
         || key.scancode == sf::Keyboard::Scancode::Down
-        || key.scancode == sf::Keyboard::Scancode::NumpadPlus
-        || key.scancode == sf::Keyboard::Scancode::NumpadMinus)
+        || key.scancode == sf::Keyboard::Scancode::Space
+        || key.scancode == sf::Keyboard::Scancode::Enter)
     {
         scene.camera.move_stop();
     }
 }
 
-
-void handle (const sf::Event::Resized& resized, Menu& menu)
+void handle (const sf::Event::Resized& resized, Camera& camera)
 {
-    menu.reset_size(resized.size.x, resized.size.y);
+    glViewport (0, 0, resized.size.x, resized.size.y);
+    camera.set_window_size (resized.size.x, resized.size.y);
 }
 
-void handle (const sf::Event::MouseMoved& mouse_moved, Menu& menu)
+void handle (const sf::Event::MouseMoved& mouse_moved)
 {
-   sf::FloatRect bounds = menu.sfondo.getGlobalBounds();
-    if(bounds.contains({(float)mouse_moved.position.x, (float)mouse_moved.position.y}))
-        menu.which_level({(float)mouse_moved.position.x, (float)mouse_moved.position.y});
+    // se il mouse si trova su oggetti mobili cambia colore degli oggetti
 }
 
 void handle (sf::Vector2f delta, Camera& camera)
@@ -790,12 +871,28 @@ void handle (sf::Vector2f delta, Camera& camera)
     camera.pan_tilt (delta.x, delta.y);
 }
 
-void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera, sf::RenderWindow& window)
+void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera, sf::Window& window, Scene& scene)
 {
     if (mouse_pressed.button == sf::Mouse::Button::Left) {
         bool pan_tilt_on = camera.pan_tilt_toggle ();
         window.setMouseCursorGrabbed (pan_tilt_on);
         window.setMouseCursorVisible (!pan_tilt_on);
+    }
+    else if (mouse_pressed.button == sf::Mouse::Button::Right)
+    {
+        bool sphere = scene.mouse_su_sphere (mouse_pressed.position, window.getSize());
+        if (scene.level == 3)
+        {
+            if (!scene.sphere_move_on)
+                scene.sphere_move_on = sphere;
+            else{
+                scene.sphere_move_on = false;
+                scene.direzione = -1;
+            }
+        }
+        if (!sphere && scene.mouse_su_bunny (mouse_pressed.position, window.getSize()))
+            std::cout<<"COMPLIMENTI! hai trovato il coniglio"<<std::endl;
+
     }
 }
 
@@ -807,51 +904,50 @@ void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera,
 int main ()
 {
     Setup setup;
-    sf::RenderWindow& window = setup.window;
-    Menu menu (setup);
+    sf::Window& window = setup.window;
 
     fcg::Shaders shaders ("shader/shader_flat.vert", "shader/shader_flat.frag");
     shaders.use ();
 
-    Scene scene ("data/", shaders);
+    Scene scene ("data/", shaders, 3);
 
     glEnable (GL_CULL_FACE);
     glCullFace (GL_BACK);
     glEnable (GL_DEPTH_TEST);
-
 
     sf::Clock clock;
     bool running = true;
     fcg::RawMouse raw_mouse;
     while(running)
     {
-        window.clear();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         while (const std::optional event = window.pollEvent ())
         {
             if (event->is<sf::Event::Closed> ())
                 running = false;
             else if(const auto* resized = event->getIf<sf::Event::Resized> ())
-                handle (* resized, menu);
+                handle (* resized, scene.camera);
             else if(const auto* key_pressed = event->getIf<sf::Event::KeyPressed> ())
                 handle (* key_pressed, scene);
             else if (const auto* key_released = event->getIf<sf::Event::KeyReleased> ())
                 handle (*key_released, scene);
             else if(const auto* mouse_moved = event->getIf<sf::Event::MouseMoved> ())
-                handle (* mouse_moved, menu);
+                handle (* mouse_moved);
             else if (const auto* mouse_pressed = event->getIf<sf::Event::MouseButtonPressed> ())
-                handle (*mouse_pressed, scene.camera, window);
+                handle (*mouse_pressed, scene.camera, window, scene);
             else if (const auto* mouse_moved_raw = event->getIf<sf::Event::MouseMovedRaw> ())
                 raw_mouse.event (*mouse_moved_raw);
         }
+
+        shaders.use ();
         handle (raw_mouse.delta (), scene.camera);
 
         float elapsed = clock.restart().asSeconds();
         scene.camera.move (elapsed);
+        scene.move_sphere (elapsed/3);
         scene.lights.send_position_relative (scene.camera.inv_v);
 
-        //menu.draw();
         scene.draw();
         window.display();
     }
-   
 }

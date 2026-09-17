@@ -11,15 +11,12 @@
 #include <iostream>
 #include <math.h>
 
-#include <SFML/Graphics.hpp>
 #include <glm/glm.hpp>
 
 #include "../include/matrices.hh"
 #include "../include/mesh.hh"
 #include "../include/hotshaders.hh"
 #include "../include/rawmouse.hh"
-
-bool parte3D = false;
 
 struct Box
 {
@@ -97,7 +94,7 @@ public:
     static const int min_window_width = 400;
     static const int min_window_height = 300;
 
-    sf::RenderWindow window;
+    sf::Window window;
 
     Setup ()
     {
@@ -105,6 +102,7 @@ public:
         settings.depthBits = 24;
         settings.stencilBits = 8;
         settings.antiAliasingLevel = 4;
+        settings.attributeFlags = sf::ContextSettings::Attribute::Core;
         settings.majorVersion = 4;
         settings.minorVersion = 1;
 
@@ -136,41 +134,69 @@ public:
     glm::vec3 material_specular = {1.0, 1.0, 1.0};  // rgb
     float material_shininess = 1000.0; // scalar
 
+    bool bianco = true;
+
 private:
-    // lights and materials
-    GLint light_direct_pos_loc;   // xyz
-    GLint light_direct_val_loc;   // rgb
-    GLint light_ambient_val_loc;  // rgb
-    GLint material_diffuse_loc;   // rgb
-    GLint material_ambient_loc;   // rgb
-    GLint material_specular_loc;  // rgb
-    GLint material_shininess_loc; // scalar
+    
+    GLint light_direct_pos_loc_bianco;   // xyz
+    GLint light_direct_val_loc_bianco;   // rgb
+    GLint light_ambient_val_loc_bianco;  // rgb
+    GLint material_diffuse_loc_bianco;   // rgb
+    GLint material_ambient_loc_bianco;   // rgb
+    GLint material_specular_loc_bianco;  // rgb
+    GLint material_shininess_loc_bianco; // scalar
+
+    GLint light_direct_pos_loc_colorato;   // xyz
+    GLint light_direct_val_loc_colorato;   // rgb
+    GLint light_ambient_val_loc_colorato;  // rgb
+    GLint material_diffuse_loc_colorato;   // rgb
+    GLint material_ambient_loc_colorato;   // rgb
+    GLint material_specular_loc_colorato;  // rgb
+    GLint material_shininess_loc_colorato; // scalar
 
 public:
-    Lights (fcg::Shaders& shaders)
+    Lights (fcg::Shaders& shaders__bianco, fcg::Shaders& shaders__colorato)
     {
-        locations (shaders);
+        locations (shaders__bianco, shaders__colorato);
     }
 
-    void locations (fcg::Shaders& shaders)
+    void locations (fcg::Shaders& shaders__bianco, fcg::Shaders& shaders__colorato)
     {
-        light_direct_pos_loc = glGetUniformLocation (shaders.program, "light.direct_pos");
-        light_direct_val_loc = glGetUniformLocation (shaders.program, "light.direct_val");
-        light_ambient_val_loc = glGetUniformLocation (shaders.program, "light.ambient_val");
-        material_diffuse_loc = glGetUniformLocation (shaders.program, "material.diffuse");
-        material_ambient_loc = glGetUniformLocation (shaders.program, "material.ambient");
-        material_specular_loc = glGetUniformLocation (shaders.program, "material.specular");
-        material_shininess_loc = glGetUniformLocation (shaders.program, "material.shininess");
+        light_direct_pos_loc_bianco = glGetUniformLocation (shaders__bianco.program, "light.direct_pos");
+        light_direct_val_loc_bianco = glGetUniformLocation (shaders__bianco.program, "light.direct_val");
+        light_ambient_val_loc_bianco = glGetUniformLocation (shaders__bianco.program, "light.ambient_val");
+        material_diffuse_loc_bianco = glGetUniformLocation (shaders__bianco.program, "material.diffuse");
+        material_ambient_loc_bianco = glGetUniformLocation (shaders__bianco.program, "material.ambient");
+        material_specular_loc_bianco = glGetUniformLocation (shaders__bianco.program, "material.specular");
+        material_shininess_loc_bianco = glGetUniformLocation (shaders__bianco.program, "material.shininess");
+
+        light_direct_pos_loc_colorato = glGetUniformLocation(shaders__colorato.program, "light.direct_pos");
+        light_direct_val_loc_colorato = glGetUniformLocation(shaders__colorato.program, "light.direct_val");
+        light_ambient_val_loc_colorato = glGetUniformLocation(shaders__colorato.program, "light.ambient_val");
+        material_diffuse_loc_colorato = glGetUniformLocation(shaders__colorato.program, "material.diffuse");
+        material_ambient_loc_colorato = glGetUniformLocation(shaders__colorato.program, "material.ambient");
+        material_specular_loc_colorato = glGetUniformLocation(shaders__colorato.program, "material.specular");
+        material_shininess_loc_colorato = glGetUniformLocation(shaders__colorato.program, "material.shininess");
     }
 
-    void send_parameters ()
+    void send_parameters_bianco ()
     {
-        glUniform3fv (light_direct_val_loc, 1, &light_direct_val[0]);
-        glUniform3fv (light_ambient_val_loc, 1, &light_ambient_val[0]);
-        glUniform3fv (material_diffuse_loc, 1, &material_diffuse[0]);
-        glUniform3fv (material_ambient_loc, 1, &material_ambient[0]);
-        glUniform3fv (material_specular_loc, 1, &material_specular[0]);
-        glUniform1fv (material_shininess_loc, 1, &material_shininess);
+        glUniform3fv (light_direct_val_loc_bianco, 1, &light_direct_val[0]);
+        glUniform3fv (light_ambient_val_loc_bianco, 1, &light_ambient_val[0]);
+        glUniform3fv (material_diffuse_loc_bianco, 1, &material_diffuse[0]);
+        glUniform3fv (material_ambient_loc_bianco, 1, &material_ambient[0]);
+        glUniform3fv (material_specular_loc_bianco, 1, &material_specular[0]);
+        glUniform1fv (material_shininess_loc_bianco, 1, &material_shininess);
+    }
+
+    void send_parameters_colorato ()
+    {
+        glUniform3fv (light_direct_val_loc_colorato, 1, &light_direct_val[0]);
+        glUniform3fv (light_ambient_val_loc_colorato, 1, &light_ambient_val[0]);
+        glUniform3fv (material_diffuse_loc_colorato, 1, &material_diffuse[0]);
+        glUniform3fv (material_ambient_loc_colorato, 1, &material_ambient[0]);
+        glUniform3fv (material_specular_loc_colorato, 1, &material_specular[0]);
+        glUniform1fv (material_shininess_loc_colorato, 1, &material_shininess);
     }
 
     void send_position_relative (const glm::mat4& inverse_view_matrix)
@@ -178,12 +204,18 @@ public:
         glm::vec4 p = glm::vec4 (light_direct_pos_relative, 1.0);
         p = inverse_view_matrix * p;
         light_direct_pos = {p.x, p.y, p.z};
-        send_position ();
+        if(bianco)    send_position_bianco();
+        else    send_position_colorato ();
     }
 
-    void send_position ()
+    void send_position_bianco ()
     {
-        glUniform3fv (light_direct_pos_loc, 1, &light_direct_pos[0]);
+        glUniform3fv (light_direct_pos_loc_bianco, 1, &light_direct_pos[0]);
+    }
+
+    void send_position_colorato ()
+    {
+        glUniform3fv (light_direct_pos_loc_colorato, 1, &light_direct_pos[0]);
     }
 };
 
@@ -195,6 +227,8 @@ public:
     glm::mat4 vp;
     int asse = 0; // x=1, y=2, z=3
 
+    bool bianco = true;
+
 private:
     /** Intrinsic camera parameters **/
     const float normal_fd = 50.0 / 18.0;
@@ -205,7 +239,8 @@ private:
     /** Extrinsic camera parameters **/
     // xyz, starting point of dynamic camera position
     glm::vec3 camera_pos = camera_default; // xyz
-    GLint camera_pos_loc;
+    GLint camera_pos_loc_bianco;
+    GLint camera_pos_loc_colorato;
     // Angles defining the in-place camera rotation
     float phi_deg = 0.0;
     float theta_deg = 0.0;
@@ -220,23 +255,33 @@ private:
     bool collision = false;
 
 public:
-    Camera (fcg::Shaders& shaders)
+    Camera (fcg::Shaders& shaders_bianco, fcg::Shaders& shaders_colorato)
     {
-        locations (shaders);
+        locations (shaders_bianco, shaders_colorato);
         lens_normal ();
         set_window_size (Setup::window_width, Setup::window_height);
         view_projection ();
+        if (bianco)     send_parameters_bianco();
+        else    send_parameters_colorato();
     }
 
-    void locations (fcg::Shaders& shaders)
+    void locations (fcg::Shaders& shaders_bianco, fcg::Shaders& shaders_colorato)
     {
-        camera_pos_loc = glGetUniformLocation (shaders.program, "camera_pos");
+        camera_pos_loc_bianco = glGetUniformLocation (shaders_bianco.program, "camera_pos");
+        camera_pos_loc_colorato = glGetUniformLocation (shaders_colorato.program, "camera_pos");
     }
+
+    GLint get_camera_pos_loc_bianco () { return camera_pos_loc_bianco; }
+    GLint get_camera_pos_loc_colorato () { return camera_pos_loc_colorato; }
+    glm::vec3 get_camera_pos () { return camera_pos; }
+    bool is_moving() const { return pan_tilt_on || move_on; }
 
     void set_window_size(int w, int h)
     {
         ar = ((float) w) / (float) h;
         view_projection ();
+        if (bianco)     send_parameters_bianco();
+        else    send_parameters_colorato();
     }   
 
     bool pan_tilt_toggle ()
@@ -254,6 +299,8 @@ public:
         theta_deg = theta_deg > 90.0? 90.0 : theta_deg;
         theta_deg = theta_deg < -90.0? -90.0 : theta_deg;
         view_projection ();
+        if (bianco)     send_parameters_bianco();
+        else    send_parameters_colorato();
     }
 
     void set_collision_boxes (const std::vector<Box>& boxes)
@@ -317,7 +364,6 @@ public:
         {
             if (move_add)    candidate.z += delta;
             else            candidate.z -= delta;
-
         }
 
         // Calcola la posizione che raggiungeremmo durante questo frame. // Non entrare nel riquadro di delimitazione di un oggetto fisso.
@@ -329,12 +375,16 @@ public:
         collision = false;
         camera_pos = candidate;
         view_projection ();
+        if (bianco)     send_parameters_bianco();
+        else    send_parameters_colorato();
     }
 
     void lens_normal ()
     {
         fd = normal_fd;
         view_projection ();
+        if (bianco)     send_parameters_bianco();
+        else    send_parameters_colorato();
     }
 
     void set_default ()
@@ -353,7 +403,6 @@ public:
 
     void view_projection ()
     {
-        const glm::vec3 cp = camera_pos;
         float ncp = 0.1f;
         float fcp = 100.0f;
 
@@ -378,168 +427,16 @@ public:
         vp = pr * v;
         inv_v = glm::inverse (v);
 
-        glUniform3fv(camera_pos_loc, 1, &cp[0]);
-    }
-};
-
-class Menu
-{
-public:
-    sf::RenderWindow& window;
-    sf::Vector2u size_window;
-    sf::RectangleShape sfondo;
-
-private:
-    sf::Font font{"data/GeorgiaLike-Regular.ttf"};
-    unsigned int lv;
-    float width, height;
-    std::vector <sf::RectangleShape> buttons;
-    unsigned int lv_chose = 0;
-
-public:
-    Menu (Setup& s) : window (s.window)
-    {
-        lv = 3;
-        size_window = window.getSize();
-        width = size_window.x /2.f;
-        height = size_window.y /2.f;
-        reset_level ();
     }
 
-    void reset_size(int w, int h)
+    void send_parameters_bianco ()
     {
-        reset_level ();
-        if (w < Setup::min_window_width)    w = Setup::min_window_width;
-        if (h < Setup::min_window_height)   h = Setup::min_window_height;
-
-        size_window = {static_cast<unsigned>(w), static_cast<unsigned>(h)};
-        width = w/2.f;
-        height = h/2.f;
-        sf::View view = window.getDefaultView();
-        view.setSize({static_cast<float>(w), static_cast<float>(h)});
-        view.setCenter({w / 2.f, h / 2.f});
-        window.setView(view);
-        if (window.getSize().x != static_cast<unsigned>(w) || window.getSize().y != static_cast<unsigned>(h))
-        {
-            window.setSize({static_cast<unsigned>(w), static_cast<unsigned>(h) });
-        }
+        glUniform3fv(camera_pos_loc_bianco, 1, &camera_pos[0]);
     }
 
-    void reset_level()
+    void send_parameters_colorato ()
     {
-        lv_chose = 0;
-    }
-
-    unsigned get_level () {return lv_chose;}
-
-    void draw()
-    {
-        draw_sfondo();
-        draw_button();
-        draw_text();
-    }
-
-    void which_level(sf::Vector2f mousePos)
-    {
-        reset_level ();
-        for(unsigned i=0; i<buttons.size(); i++)
-        {
-            sf::FloatRect bounds = buttons[i].getGlobalBounds();
-            if(bounds.contains(mousePos))
-            {
-                lv_chose = i+1;
-                break;
-            }
-        }
-    }
-
-private:
-    void draw_sfondo()
-    {
-        sfondo.setSize({width, height});
-        sfondo.setPosition({
-            (size_window.x - width) / 2.f,
-            (size_window.y - height) / 2.f
-        });
-        sfondo.setFillColor(sf::Color(128, 128, 128, 255)); // riempimento grigio
-        sfondo.setOutlineColor(sf::Color(139, 69, 19)); // bordo marrone
-        sfondo.setOutlineThickness(5.f); // spessore bordo
-        window.draw(sfondo);
-    }
-
-    void draw_text()
-    {
-        std::vector<std::string> livelli = {"scegli livello"};
-        for(unsigned i=0; i<=lv; i++)
-        {
-            if(i!=0)
-            {
-                std::string temp = std::to_string(i);
-                livelli.push_back(temp);
-            }
-            sf::Text text(font, livelli[i], 30);
-            if(i==0 || i!=lv_chose)
-                text.setFillColor(sf::Color::Blue);
-            else
-                text.setFillColor(sf::Color::Red);
-            if(i==0)
-                text_centre(text, sfondo.getPosition(), {width, height}, false);
-            else
-                text_centre(text, buttons[i-1].getPosition(), buttons[i-1].getSize(), true);
-            window.draw(text);
-        }
-    }
-
-    void draw_button()
-    {
-        buttons.clear();
-        float size = 50.f;
-        float y = sfondo.getPosition().y + sfondo.getSize().y * 3.f / 5.f;
-        float w_sfondo = sfondo.getSize().x;
-        float distanza = (w_sfondo - lv * size) / (lv + 1);
-        for(unsigned i=1; i<=lv; i++)
-        {
-            sf::RectangleShape button;
-            set_button(button, i, size, distanza, y);
-            window.draw(button);
-            buttons.push_back(button);
-        }
-    }
-
-    void set_button(sf::RectangleShape& button, unsigned i, float size, float distanza, float y)
-    {
-        button.setSize({size, size});
-        button.setFillColor(sf::Color::White); // riempimento bianco
-        if(i!=lv_chose)
-            button.setOutlineColor(sf::Color::Yellow); // bordo giallo
-        else
-            button.setOutlineColor(sf::Color::Red); // bordo rosso
-        button.setOutlineThickness(3.f); // spessore bordo
-        sf::FloatRect bounds = button.getLocalBounds();
-        button.setOrigin({
-            bounds.position.x,
-            bounds.position.y + bounds.size.y / 2.f
-        });
-        float x = sfondo.getPosition().x + distanza + (i-1) * (size + distanza);
-        button.setPosition({x, y});
-    }
-
-    // testo, posizione padre di riferimento, size padre, true->1/2 altezza o false->1/4 
-    void text_centre(sf::Text& text, sf::Vector2f padre, sf::Vector2f size, bool mezzo) 
-    {
-        sf::FloatRect bounds = text.getLocalBounds();
-        text.setOrigin({
-            bounds.position.x + bounds.size.x / 2.f,
-            bounds.position.y + bounds.size.y / 2.f
-        });
-        float x = padre.x + size.x / 2.f;   // centro X
-        float y;
-        if(mezzo) 
-            y = padre.y;   // centro Y
-        else
-            y = padre.y + size.y / 4.f;   // 1/4 dall'alto
-            
-        text.setPosition({x, y});
+        glUniform3fv(camera_pos_loc_colorato, 1, &camera_pos[0]);
     }
 };
 
@@ -671,6 +568,8 @@ class Scene
 {
 public:
     int level;
+    fcg::Shaders& shaders_bianco;
+    fcg::Shaders& shaders_colorato;
     Camera camera;
     Lights lights;
 
@@ -678,43 +577,84 @@ public:
     GPUMesh bunny;
     GPUMesh sphere;
 
+    bool bunny_hover = false;
+    bool wall_hover = false;
+    bool sphere_hover = false;
+    bool sphere_move_on = false;
+    int direzione = -1;
+
 private:
-    GLint model_loc;
-    GLint vp_loc;
-    GLint tr_inv_model_loc;
+    GLint model_loc_bianco;
+    GLint vp_loc_bianco;
+    GLint tr_inv_model_loc_bianco;
+
+    GLint model_loc_colorato;
+    GLint vp_loc_colorato;
+    GLint tr_inv_model_loc_colorato;
 
     std::vector<Box> collision_boxes;
     glm::mat4 bunny_model, wall_model, sphere_model;
 
 public:
-    Scene (std::string dirname, fcg::Shaders& shaders, int n) :
-        camera (shaders), lights (shaders),
+    Scene (std::string dirname, fcg::Shaders& shaders_bianco, fcg::Shaders& shaders_colorato, int n) :
+        shaders_bianco (shaders_bianco), 
+        shaders_colorato (shaders_colorato), 
+        camera (shaders_bianco, shaders_colorato), 
+        lights (shaders_bianco, shaders_colorato),
         cube (dirname + "cube.off"),
         bunny (dirname + "bunny.off"),
         sphere (dirname + "sphere.off")
     {
         level = n;
-        locations (shaders);
+        locations();
+        update_all_bianco ();
         build_collision_boxes ();
-        camera.set_collision_boxes (collision_boxes);             
-        update_all ();
+        camera.set_collision_boxes (collision_boxes);
     }
     
-    void locations (fcg::Shaders& shaders)
+    void locations()
     {
-        camera.locations (shaders);
-        lights.locations (shaders);
-
-        model_loc = glGetUniformLocation (shaders.program, "model");
-        vp_loc = glGetUniformLocation (shaders.program, "vp");
-        tr_inv_model_loc = glGetUniformLocation (shaders.program, "tr_inv_model");
+        camera.locations (shaders_bianco, shaders_colorato);
+        lights.locations (shaders_bianco, shaders_colorato);
+        model_loc_bianco = glGetUniformLocation(shaders_bianco.program, "model");
+        vp_loc_bianco = glGetUniformLocation(shaders_bianco.program, "vp");
+        tr_inv_model_loc_bianco = glGetUniformLocation(shaders_bianco.program, "tr_inv_model");
+        model_loc_colorato = glGetUniformLocation(shaders_colorato.program, "model");
+        vp_loc_colorato = glGetUniformLocation(shaders_colorato.program, "vp");
+        tr_inv_model_loc_colorato = glGetUniformLocation(shaders_colorato.program, "tr_inv_model");
     }
 
-    void update_all ()
+    void update_all_bianco ()
     {
+        shaders_bianco.use();
+        camera.bianco = true;
         camera.view_projection ();
-        lights.send_parameters ();
+        lights.bianco = true;
+        lights.send_parameters_bianco ();
         lights.send_position_relative (camera.inv_v);
+    }
+
+    void update_all_colorato ()
+    {
+        shaders_colorato.use();
+        camera.bianco = false;
+        camera.view_projection ();
+        lights.bianco = false;
+        lights.send_parameters_colorato ();
+        lights.send_position_relative (camera.inv_v);
+    }
+
+    void update ()
+    {
+        if (camera.is_moving())
+        {
+            bunny_hover = false;
+            sphere_hover = false;
+            update_all_bianco();
+            return;
+        }
+        if (bunny_hover || sphere_hover)    update_all_colorato();
+        else    update_all_bianco();
     }
 
     void reload (int n)
@@ -736,16 +676,70 @@ public:
         glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // the view-projection matrix is the same for all the scene
-        glUniformMatrix4fv(vp_loc, 1, GL_FALSE, &camera.vp[0][0]); // vp = Projection(prospettiva della telecamera) × View(posizione della telecamera)
+        // vp = Projection(prospettiva della telecamera) × View(posizione della telecamera)
 
-        draw_bunny (bunny_model);
-        if (level == 2)    draw_wall();
-        else if(level == 3)   draw_sphere(sphere_model);
+        if (bunny_hover)
+        {
+            shaders_colorato.use();
+            glUniformMatrix4fv(vp_loc_colorato, 1, GL_FALSE, &camera.vp[0][0]);
+            draw_bunny (bunny_model);
+        }
+        else{
+            shaders_bianco.use();
+            glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
+            draw_bunny (bunny_model);
+        }
+        if (level == 2){
+            shaders_bianco.use();
+            glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
+            draw_wall();
+        }
+        else if(level == 3)
+        {
+            if (sphere_hover)
+            {
+                shaders_colorato.use();
+                glUniformMatrix4fv(vp_loc_colorato, 1, GL_FALSE, &camera.vp[0][0]);
+                draw_sphere(sphere_model);
+            }
+            else
+            {
+                shaders_bianco.use();
+                glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
+                draw_sphere(sphere_model);
+            }
+        }
 
         camera.clear_collision_feedback ();
     }
 
-    bool bunny_trovato(sf::Vector2i position, sf::Vector2u window_size)
+    void move_sphere (float delta)
+    {
+        if (!sphere_move_on || direzione == -1)
+            return;
+        else if (direzione == 1)
+        {
+            glm::mat4 translate = fcg::translation (0, delta, 0);
+            sphere_model = translate * sphere_model;
+        }
+        else if (direzione == 2)
+        {
+            glm::mat4 translate = fcg::translation (0, -delta, 0);
+            sphere_model = translate * sphere_model;
+        }
+        else if (direzione == 3)
+        {
+            glm::mat4 translate = fcg::translation (-delta, 0, 0);
+            sphere_model = translate * sphere_model;
+        }
+        else if (direzione == 4)
+        {
+            glm::mat4 translate = fcg::translation (delta, 0, 0);
+            sphere_model = translate * sphere_model;
+        }
+    }
+
+    bool mouse_su (sf::Vector2i position, sf::Vector2u window_size, int n)
     {
         float x =
             2.0f * static_cast<float>(position.x)
@@ -773,12 +767,35 @@ public:
                 glm::vec3(far_point - near_point)
             );
 
-        glm::mat4 inv_bunny = glm::inverse(bunny_model); 
-        glm::vec3 local_origin = glm::vec3( inv_bunny * glm::vec4(ray_origin, 1.0f) ); 
-        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_bunny * glm::vec4(ray_direction, 0.0f) ) );
+        const GPUMesh* temp = nullptr;
+        glm::mat4 model;
+        if (n == 1)
+        {
+            // Bunny
+            temp = &bunny;
+            model = bunny_model;
+        }
+        else if (n == 2)
+        {
+            // Wall / cube
+            temp = &cube;
+            model = wall_model;
+        }
+        else if (n == 3)
+        {
+            // Sphere
+            temp = &sphere;
+            model = sphere_model;
+        }
+        else
+            return false;
 
-        const auto& points = bunny.get_points(); 
-        const auto& indices = bunny.get_indices(); 
+        glm::mat4 inv_model = glm::inverse(model);
+        glm::vec3 local_origin = glm::vec3(inv_model * glm::vec4(ray_origin, 1.0f) ); 
+        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_model * glm::vec4(ray_direction, 0.0f) ) );
+
+        const auto& points = temp->get_points(); 
+        const auto& indices = temp->get_indices(); 
         for (size_t i = 0; i < indices.size(); i += 3) { 
             unsigned int i0 = indices[i]; 
             unsigned int i1 = indices[i + 1]; 
@@ -798,8 +815,16 @@ private:
     {
         glm::mat4 mm = bunny_trasforme;
         glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, &mm[0][0]);
-        glUniformMatrix3fv (tr_inv_model_loc, 1, GL_FALSE, &ti_mm[0][0]);
+        if (!bunny_hover)
+        {
+            glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
+            glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
+        }
+        else
+        {
+            glUniformMatrix4fv(model_loc_colorato, 1, GL_FALSE, &mm[0][0]);
+            glUniformMatrix3fv (tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
+        }
         bunny.draw ();
     }
     
@@ -807,8 +832,8 @@ private:
     {
         glm::mat4 mm = cube_trasforme;
         glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, &mm[0][0]);
-        glUniformMatrix3fv (tr_inv_model_loc, 1, GL_FALSE, &ti_mm[0][0]);
+        glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
+        glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
         cube.draw ();
     }
 
@@ -820,9 +845,17 @@ private:
     void draw_sphere (glm::mat4 sphere_trasforme)
     {
         glm::mat4 mm = sphere_trasforme;
-        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, &mm[0][0]);
-        glUniformMatrix3fv (tr_inv_model_loc, 1, GL_FALSE, &ti_mm[0][0]);
+        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));        
+        if (!sphere_hover)
+        {
+            glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
+            glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
+        }
+        else
+        {
+            glUniformMatrix4fv(model_loc_colorato, 1, GL_FALSE, &mm[0][0]);
+            glUniformMatrix3fv (tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
+        }
         sphere.draw ();
     }
 
@@ -830,10 +863,12 @@ private:
     {
         glm::mat4 scale, translate;
         collision_boxes.clear ();
-        if (level == 1){
+        if (level == 1)
+        {
             translate = fcg::translation (0, 0, 8.0f); // push it away
         }
-        else{
+        else
+        {
             translate = fcg::translation (0, 0, -3.0f); // push it away
         }
         bunny_model = translate * bunny.to_unit_extent;
@@ -842,7 +877,8 @@ private:
         bunny_box = expand_box(bunny_box, margin);
         collision_boxes.push_back (bunny_box);
         
-        if (level == 2){
+        if (level == 2)
+        {
             // Dimensioni del muro: spessore, base, altezza
             float depth = 1.0f;
             float width = bunny.extent.x * 1.5;
@@ -856,9 +892,10 @@ private:
             wall_box = expand_box(wall_box, wall_margin);
             collision_boxes.push_back (wall_box);
         }
-        else if (level == 3){
+        else if (level == 3)
+        {
             translate = fcg::translation (0, 0, -1.0f); // push it away
-            scale = fcg::scaling (2.0f, 2.0f, 2.0f); // flatten the cube!
+            scale = fcg::scaling (1.5f, 1.5f, 1.5f); // flatten the cube!
             sphere_model = translate * scale * sphere.to_unit_extent;
             Box sphere_box = sphere.world_bounds(sphere_model);
             sphere_box = expand_box(sphere_box, margin);
@@ -872,45 +909,86 @@ private:
 // SFML Callbacks //
 ////////////////////
 
-void handle (const sf::Event::KeyPressed& key, Scene& scene)
+void handle (const sf::Event::KeyPressed& key, Scene& scene, Camera& camera)
 {
-    if (parte3D){
-        if (key.scancode == sf::Keyboard::Scancode::Escape)
-            exit (0);
-        else if (key.scancode == sf::Keyboard::Scancode::Right)
-        {
-            scene.camera.asse = 1;
-            scene.camera.move_start(true);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::Left)
-        {
-            scene.camera.asse = 1;
-            scene.camera.move_start(false);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::Up)
-        {
-            scene.camera.asse = 2;
-            scene.camera.move_start(true);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::Down)
-        {
-            scene.camera.asse = 2;
-            scene.camera.move_start(false);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::NumpadPlus) // allontanare oggetto
-        {
-            scene.camera.asse = 3;
-            scene.camera.move_start(true);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::NumpadMinus) // avvicinare oggetto
-        {
-            scene.camera.asse = 3;
-            scene.camera.move_start(false);
-        }
+    if (key.scancode == sf::Keyboard::Scancode::Escape)
+    {
+        std::cout<<"hai chiuso il gioco"<<std::endl;
+        exit(0);
     }
-    else{
-        if (key.scancode == sf::Keyboard::Scancode::Escape)
-            exit (0);
+    else if (key.scancode == sf::Keyboard::Scancode::Num1)
+    {
+        scene.level = 1;
+        scene.reload(1);
+        camera.set_default ();
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num2)
+    {
+        scene.level = 2;
+        scene.reload(2);
+        camera.set_default ();
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num3)
+    {
+        scene.level = 3;
+        scene.reload(3);
+        camera.set_default ();
+    }
+
+    else if (key.scancode == sf::Keyboard::Scancode::Right)
+    {
+        scene.camera.asse = 1;
+        scene.camera.move_start(true);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Left)
+    {
+        scene.camera.asse = 1;
+        scene.camera.move_start(false);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Up)
+    {
+        scene.camera.asse = 2;
+        scene.camera.move_start(true);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Down)
+    {
+        scene.camera.asse = 2;
+        scene.camera.move_start(false);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
+    {
+        scene.camera.asse = 3;
+        scene.camera.move_start(true);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Enter) // avvicinare oggetto
+    {
+        scene.camera.asse = 3;
+        scene.camera.move_start(false);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::W)
+    {
+        if (scene.sphere_move_on)     scene.direzione = 1;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::S)
+    {
+        if (scene.sphere_move_on)     scene.direzione = 2;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::A)
+    {
+        if (scene.sphere_move_on)     scene.direzione = 3;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::D)
+    {
+        if (scene.sphere_move_on)     scene.direzione = 4;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::H)
+    {
+        if (scene.level==1)
+            std::cout<<"Per ruotre la visione, fai un clic sul sinistro del muose per smettere di ruotare fai secondo clic"<<std::endl;
+        else if (scene.level==2)
+            std::cout<<"Usare i tasti frecce, Spazio e Invio per spostare la telecamera"<<std::endl;
+        else if (scene.level==3)
+            std::cout<<"fai un clic sul destro del muose sulla sfera per selezionarla poi usa i tasti W,S,A,D per spostare la sfera"<<std::endl;
     }
 }
 
@@ -920,37 +998,39 @@ void handle (const sf::Event::KeyReleased& key, Scene& scene)
         || key.scancode == sf::Keyboard::Scancode::Left
         || key.scancode == sf::Keyboard::Scancode::Up
         || key.scancode == sf::Keyboard::Scancode::Down
-        || key.scancode == sf::Keyboard::Scancode::NumpadPlus
-        || key.scancode == sf::Keyboard::Scancode::NumpadMinus)
+        || key.scancode == sf::Keyboard::Scancode::Enter
+        || key.scancode == sf::Keyboard::Scancode::Space)
     {
         scene.camera.move_stop();
     }
 }
 
-void handle (const sf::Event::Resized& resized, Menu& menu, Camera& camera)
+void handle (const sf::Event::Resized& resized, Camera& camera)
 {
-    if(!parte3D)
-        menu.reset_size(resized.size.x, resized.size.y);
-    else
-    {
-        glViewport (0, 0, resized.size.x, resized.size.y);
-        camera.set_window_size (resized.size.x, resized.size.y);
-    }
+    glViewport (0, 0, resized.size.x, resized.size.y);
+    camera.set_window_size (resized.size.x, resized.size.y);
 }
 
-void handle (const sf::Event::MouseMoved& mouse_moved, Menu& menu)
+void handle (const sf::Event::MouseMoved& mouse_moved, sf::Window& window, Scene& scene)
 {
-    if(!parte3D)
+    // reset
+    scene.bunny_hover = false;
+    scene.wall_hover = false;
+    scene.sphere_hover = false;
+
+    // Durante la rotazione della telecamera NON fare il ray casting sugli oggetti.
+    if (scene.camera.is_moving())
+        return;
+
+    if (scene.level == 2)
     {
-        sf::FloatRect bounds = menu.sfondo.getGlobalBounds();
-        if(bounds.contains({(float)mouse_moved.position.x, (float)mouse_moved.position.y}))
-            menu.which_level({(float)mouse_moved.position.x, (float)mouse_moved.position.y});
-        else menu.reset_level ();
+        scene.wall_hover = scene.mouse_su (mouse_moved.position, window.getSize(), 2);
     }
-    else
+    else if (scene.level == 3)
     {
-        // se il mouse si trova su oggetti mobili cambia colore degli oggetti
+        scene.sphere_hover = scene.mouse_su (mouse_moved.position, window.getSize(), 3);
     }
+    if (!scene.wall_hover && !scene.sphere_hover)    scene.bunny_hover = scene.mouse_su (mouse_moved.position, window.getSize(), 1);
 }
 
 void handle (sf::Vector2f delta, Camera& camera)
@@ -958,42 +1038,29 @@ void handle (sf::Vector2f delta, Camera& camera)
     camera.pan_tilt (delta.x, delta.y);
 }
 
-void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera, sf::RenderWindow& window, Scene& scene, Menu& menu)
+void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera, sf::Window& window, Scene& scene)
 {
-    if(parte3D)
-    {
-        if (mouse_pressed.button == sf::Mouse::Button::Left) {
-            bool pan_tilt_on = camera.pan_tilt_toggle ();
-            window.setMouseCursorGrabbed (pan_tilt_on);
-            window.setMouseCursorVisible (!pan_tilt_on);
-        }
-        else if (mouse_pressed.button == sf::Mouse::Button::Right)
-        {
-            if (scene.bunny_trovato(mouse_pressed.position, window.getSize()))
-                parte3D = false;
-            else    parte3D = true;
-        }
+    if (mouse_pressed.button == sf::Mouse::Button::Left) {
+        bool pan_tilt_on = camera.pan_tilt_toggle ();
+        window.setMouseCursorGrabbed (pan_tilt_on);
+        window.setMouseCursorVisible (!pan_tilt_on);
     }
-    else
+    else if (mouse_pressed.button == sf::Mouse::Button::Right)
     {
-        if (mouse_pressed.button == sf::Mouse::Button::Left) 
+        if (scene.level == 3)
         {
-            if(menu.get_level () == 1){
-                parte3D = true;
-                scene.reload(1);
+            if (!scene.sphere_move_on)
+                scene.sphere_move_on = scene.sphere_hover;
+            else{
+                scene.sphere_move_on = false;
+                scene.direzione = -1;
             }
-            else if(menu.get_level () == 2){  
-                parte3D = true;  
-                scene.reload(2);
-            }
-            else if(menu.get_level () == 3){
-                parte3D = true;
-                scene.reload(3);
-            }
+        }
+        if (!scene.wall_hover && !scene.sphere_hover && scene.bunny_hover){
+            std::cout<<"COMPLIMENTI! hai trovato il coniglio"<<std::endl;
         }
     }
 }
-
 
 //////////
 // Main //
@@ -1001,89 +1068,56 @@ void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera,
 
 int main ()
 {
+    std::cout << "Benvenuto al gioco" << std::endl;
+    std::cout << "L'obiettivo del gioco è trovare il coniglio" << std::endl;
+    std::cout << "Usa la tastiera e il tasto sinistro del mouse per esplorare il mondo" << std::endl;
+    std::cout << "Clicca con il tasto destro del mouse per catturare il coniglio" << std::endl;
+    std::cout << "Premi il tasto H per ottenere aiuto" << std::endl;
+    
     Setup setup;
-    sf::RenderWindow& window = setup.window;
-    Menu menu (setup);
+    sf::Window& window = setup.window;
 
-    fcg::Shaders shaders ("shader/shader_flat.vert", "shader/shader_flat.frag");
-    shaders.use ();
+    fcg::Shaders shaders_bianco ("shader/shader_flat.vert", "shader/shader_flat.frag");
+    fcg::Shaders shaders_colorato ("shader/shader_normals.vert", "shader/shader_normals.frag");
+    shaders_bianco.use();
+    Scene scene ("data/", shaders_bianco, shaders_colorato, 3);
 
-    Scene scene ("data/", shaders, 3);
-
-    bool last_2D = false;
+    glEnable (GL_CULL_FACE);
+    glCullFace (GL_BACK);
+    glEnable (GL_DEPTH_TEST);
 
     sf::Clock clock;
     bool running = true;
     fcg::RawMouse raw_mouse;
     while(running)
     {
-        window.clear();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         while (const std::optional event = window.pollEvent ())
         {
             if (event->is<sf::Event::Closed> ())
                 running = false;
             else if(const auto* resized = event->getIf<sf::Event::Resized> ())
-                handle (* resized, menu, scene.camera);
+                handle (* resized, scene.camera);
             else if(const auto* key_pressed = event->getIf<sf::Event::KeyPressed> ())
-                handle (* key_pressed, scene);
+                handle (* key_pressed, scene, scene.camera);
             else if (const auto* key_released = event->getIf<sf::Event::KeyReleased> ())
                 handle (*key_released, scene);
             else if(const auto* mouse_moved = event->getIf<sf::Event::MouseMoved> ())
-                handle (* mouse_moved, menu);
+                handle (* mouse_moved, window, scene);
             else if (const auto* mouse_pressed = event->getIf<sf::Event::MouseButtonPressed> ())
-                handle (*mouse_pressed, scene.camera, window, scene, menu);
+                handle (*mouse_pressed, scene.camera, window, scene);
             else if (const auto* mouse_moved_raw = event->getIf<sf::Event::MouseMovedRaw> ())
                 raw_mouse.event (*mouse_moved_raw);
         }
 
+        scene.update();
+        handle (raw_mouse.delta (), scene.camera);
 
-        if (!parte3D)
-        {
-            last_2D = true;
-            setup.window.pushGLStates();
-
-            glBindVertexArray(0);
-            glUseProgram(0);
-
-            window.resetGLStates();
-
-            window.clear(sf::Color::Black);
-            menu.draw();
-
-            setup.window.popGLStates();
-        }
-        else
-        {
-            window.resetGLStates();
-
-            glViewport(0, 0, window.getSize().x, window.getSize().y);
-            glEnable (GL_CULL_FACE);
-            glCullFace (GL_BACK);
-            glEnable (GL_DEPTH_TEST);
-
-            shaders.use ();
-            if (!last_2D)
-            {
-                handle (raw_mouse.delta (), scene.camera);
-                float elapsed = clock.restart().asSeconds();
-                scene.camera.move (elapsed);
-            }
-            else //reset di camera
-            {
-                scene.camera.set_default();
-                last_2D = false;
-            }
-            scene.lights.send_position_relative (scene.camera.inv_v);
-
-            scene.draw();
-
-            // lascia OpenGL in uno stato pulito
-            glBindVertexArray(0);
-
-            menu.reset_level ();
-            raw_mouse.delta () = {0,0};
-        }
+        float elapsed = clock.restart().asSeconds();
+        scene.camera.move (elapsed);
+        scene.move_sphere (elapsed/3);
+    
+        scene.draw();    
         window.display();
     }
-   
 }

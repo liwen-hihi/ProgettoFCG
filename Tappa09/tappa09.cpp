@@ -11,15 +11,12 @@
 #include <iostream>
 #include <math.h>
 
-#include <SFML/Graphics.hpp>
 #include <glm/glm.hpp>
 
 #include "../include/matrices.hh"
 #include "../include/mesh.hh"
 #include "../include/hotshaders.hh"
 #include "../include/rawmouse.hh"
-
-bool parte3D = false;
 
 struct Box
 {
@@ -97,7 +94,7 @@ public:
     static const int min_window_width = 400;
     static const int min_window_height = 300;
 
-    sf::RenderWindow window;
+    sf::Window window;
 
     Setup ()
     {
@@ -105,6 +102,7 @@ public:
         settings.depthBits = 24;
         settings.stencilBits = 8;
         settings.antiAliasingLevel = 4;
+        settings.attributeFlags = sf::ContextSettings::Attribute::Core;
         settings.majorVersion = 4;
         settings.minorVersion = 1;
 
@@ -442,167 +440,6 @@ public:
     }
 };
 
-class Menu
-{
-public:
-    sf::RenderWindow& window;
-    sf::Vector2u size_window;
-    sf::RectangleShape sfondo;
-
-private:
-    sf::Font font{"data/GeorgiaLike-Regular.ttf"};
-    unsigned int lv;
-    float width, height;
-    std::vector <sf::RectangleShape> buttons;
-    unsigned int lv_chose = 0;
-
-public:
-    Menu (Setup& s) : window (s.window)
-    {
-        lv = 3;
-        size_window = window.getSize();
-        width = size_window.x /2.f;
-        height = size_window.y /2.f;
-        reset_level ();
-    }
-
-    void reset_size(int w, int h)
-    {
-        reset_level ();
-        if (w < Setup::min_window_width)    w = Setup::min_window_width;
-        if (h < Setup::min_window_height)   h = Setup::min_window_height;
-
-        size_window = {static_cast<unsigned>(w), static_cast<unsigned>(h)};
-        width = w/2.f;
-        height = h/2.f;
-        sf::View view = window.getDefaultView();
-        view.setSize({static_cast<float>(w), static_cast<float>(h)});
-        view.setCenter({w / 2.f, h / 2.f});
-        window.setView(view);
-        if (window.getSize().x != static_cast<unsigned>(w) || window.getSize().y != static_cast<unsigned>(h))
-        {
-            window.setSize({static_cast<unsigned>(w), static_cast<unsigned>(h) });
-        }
-    }
-
-    void reset_level()
-    {
-        lv_chose = 0;
-    }
-
-    unsigned get_level () {return lv_chose;}
-
-    void draw()
-    {
-        draw_sfondo();
-        draw_button();
-        draw_text();
-    }
-
-    void which_level(sf::Vector2f mousePos)
-    {
-        reset_level ();
-        for(unsigned i=0; i<buttons.size(); i++)
-        {
-            sf::FloatRect bounds = buttons[i].getGlobalBounds();
-            if(bounds.contains(mousePos))
-            {
-                lv_chose = i+1;
-                break;
-            }
-        }
-    }
-
-private:
-    void draw_sfondo()
-    {
-        sfondo.setSize({width, height});
-        sfondo.setPosition({
-            (size_window.x - width) / 2.f,
-            (size_window.y - height) / 2.f
-        });
-        sfondo.setFillColor(sf::Color(128, 128, 128, 255)); // riempimento grigio
-        sfondo.setOutlineColor(sf::Color(139, 69, 19)); // bordo marrone
-        sfondo.setOutlineThickness(5.f); // spessore bordo
-        window.draw(sfondo);
-    }
-
-    void draw_text()
-    {
-        std::vector<std::string> livelli = {"scegli livello"};
-        for(unsigned i=0; i<=lv; i++)
-        {
-            if(i!=0)
-            {
-                std::string temp = std::to_string(i);
-                livelli.push_back(temp);
-            }
-            sf::Text text(font, livelli[i], 30);
-            if(i==0 || i!=lv_chose)
-                text.setFillColor(sf::Color::Blue);
-            else
-                text.setFillColor(sf::Color::Red);
-            if(i==0)
-                text_centre(text, sfondo.getPosition(), {width, height}, false);
-            else
-                text_centre(text, buttons[i-1].getPosition(), buttons[i-1].getSize(), true);
-            window.draw(text);
-        }
-    }
-
-    void draw_button()
-    {
-        buttons.clear();
-        float size = 50.f;
-        float y = sfondo.getPosition().y + sfondo.getSize().y * 3.f / 5.f;
-        float w_sfondo = sfondo.getSize().x;
-        float distanza = (w_sfondo - lv * size) / (lv + 1);
-        for(unsigned i=1; i<=lv; i++)
-        {
-            sf::RectangleShape button;
-            set_button(button, i, size, distanza, y);
-            window.draw(button);
-            buttons.push_back(button);
-        }
-    }
-
-    void set_button(sf::RectangleShape& button, unsigned i, float size, float distanza, float y)
-    {
-        button.setSize({size, size});
-        button.setFillColor(sf::Color::White); // riempimento bianco
-        if(i!=lv_chose)
-            button.setOutlineColor(sf::Color::Yellow); // bordo giallo
-        else
-            button.setOutlineColor(sf::Color::Red); // bordo rosso
-        button.setOutlineThickness(3.f); // spessore bordo
-        sf::FloatRect bounds = button.getLocalBounds();
-        button.setOrigin({
-            bounds.position.x,
-            bounds.position.y + bounds.size.y / 2.f
-        });
-        float x = sfondo.getPosition().x + distanza + (i-1) * (size + distanza);
-        button.setPosition({x, y});
-    }
-
-    // testo, posizione padre di riferimento, size padre, true->1/2 altezza o false->1/4 
-    void text_centre(sf::Text& text, sf::Vector2f padre, sf::Vector2f size, bool mezzo) 
-    {
-        sf::FloatRect bounds = text.getLocalBounds();
-        text.setOrigin({
-            bounds.position.x + bounds.size.x / 2.f,
-            bounds.position.y + bounds.size.y / 2.f
-        });
-        float x = padre.x + size.x / 2.f;   // centro X
-        float y;
-        if(mezzo) 
-            y = padre.y;   // centro Y
-        else
-            y = padre.y + size.y / 4.f;   // 1/4 dall'alto
-            
-        text.setPosition({x, y});
-    }
-};
-
 class GPUMesh
 {
 public:
@@ -741,9 +578,14 @@ public:
     GPUMesh sphere;
 
     bool bunny_hover = false;
+    bool wall_hover = false;
     bool sphere_hover = false;
+    bool roomA_hover = false;
+    bool door_hover = false;
     bool sphere_move_on = false;
+    bool door_move_on = false;
     int direzione = -1;
+    int bunny_posto = 5;
 
 private:
     GLint model_loc_bianco;
@@ -755,7 +597,9 @@ private:
     GLint tr_inv_model_loc_colorato;
 
     std::vector<Box> collision_boxes;
-    glm::mat4 bunny_model, wall_model, sphere_model;
+    glm::mat4 bunny_model, wall_model, sphere_model, 
+        roomA_p1, roomA_p2, roomA_p3, roomA_p4, roomA_p5, 
+        roomA_door;
 
 public:
     Scene (std::string dirname, fcg::Shaders& shaders_bianco, fcg::Shaders& shaders_colorato, int n) :
@@ -815,7 +659,7 @@ public:
             update_all_bianco();
             return;
         }
-        if (bunny_hover || sphere_hover)    update_all_colorato();
+        if (bunny_hover || sphere_hover || door_hover)    update_all_colorato();
         else    update_all_bianco();
     }
 
@@ -864,43 +708,57 @@ public:
                 glUniformMatrix4fv(vp_loc_colorato, 1, GL_FALSE, &camera.vp[0][0]);
                 draw_sphere(sphere_model);
             }
-            else{
+            else
+            {
                 shaders_bianco.use();
                 glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
                 draw_sphere(sphere_model);
             }
         }
-
+        else if (level == 4){
+            shaders_bianco.use();
+            glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
+            draw_roomA();
+        }
+        else if (level == 5){
+            shaders_bianco.use();
+            glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
+            draw_roomB();
+        }
         camera.clear_collision_feedback ();
     }
 
-    void move_sphere (float delta)
+    void move_object (float delta, bool sphere) //true->sphere, false-> roomA_door
     {
-        if (!sphere_move_on || direzione == -1)
+        if ((!sphere_move_on && !door_move_on) || direzione == -1)
             return;
         else if (direzione == 1)
         {
             glm::mat4 translate = fcg::translation (0, delta, 0);
-            sphere_model = translate * sphere_model;
+            if(sphere)    sphere_model = translate * sphere_model;
+            else    roomA_door = translate * roomA_door;
         }
         else if (direzione == 2)
         {
             glm::mat4 translate = fcg::translation (0, -delta, 0);
-            sphere_model = translate * sphere_model;
+            if(sphere)    sphere_model = translate * sphere_model;
+            else    roomA_door = translate * roomA_door;
         }
         else if (direzione == 3)
         {
             glm::mat4 translate = fcg::translation (-delta, 0, 0);
-            sphere_model = translate * sphere_model;
+            if(sphere)    sphere_model = translate * sphere_model;
+            else    roomA_door = translate * roomA_door;
         }
         else if (direzione == 4)
         {
             glm::mat4 translate = fcg::translation (delta, 0, 0);
-            sphere_model = translate * sphere_model;
+            if(sphere)    sphere_model = translate * sphere_model;
+            else    roomA_door = translate * roomA_door;
         }
     }
 
-    bool mouse_su_bunny (sf::Vector2i position, sf::Vector2u window_size)
+    bool mouse_su (sf::Vector2i position, sf::Vector2u window_size, int n)
     {
         float x =
             2.0f * static_cast<float>(position.x)
@@ -928,71 +786,44 @@ public:
                 glm::vec3(far_point - near_point)
             );
 
-        glm::mat4 inv_bunny = glm::inverse(bunny_model); 
-        glm::vec3 local_origin = glm::vec3( inv_bunny * glm::vec4(ray_origin, 1.0f) ); 
-        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_bunny * glm::vec4(ray_direction, 0.0f) ) );
-
-        const auto& points = bunny.get_points(); 
-        const auto& indices = bunny.get_indices(); 
-        for (size_t i = 0; i < indices.size(); i += 3) { 
-            unsigned int i0 = indices[i]; 
-            unsigned int i1 = indices[i + 1]; 
-            unsigned int i2 = indices[i + 2];
-            glm::vec3 v0( points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2] ); 
-            glm::vec3 v1( points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2] ); 
-            glm::vec3 v2( points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2] );
-            if (ray_triangle_intersection( local_origin, local_direction, v0, v1, v2)) 
-                { return true; }
+        if (n == 1)
+        {
+            // Bunny
+            return half_mouse_su (bunny, bunny_model, ray_origin, ray_direction);
         }
-
-        return false;
-    }
-
-    bool mouse_su_sphere (sf::Vector2i position, sf::Vector2u window_size)
-    {
-        float x =
-            2.0f * static_cast<float>(position.x)
-            / static_cast<float>(window_size.x) - 1.0f;
-
-        float y =
-            1.0f - 2.0f * static_cast<float>(position.y)
-            / static_cast<float>(window_size.y);
-
-        glm::vec4 near_point(x, y, -1.0f, 1.0f);
-        glm::vec4 far_point (x, y,  1.0f, 1.0f);
-
-        glm::mat4 inv_vp = glm::inverse(camera.vp);
-
-        near_point = inv_vp * near_point;
-        far_point  = inv_vp * far_point;
-
-        near_point /= near_point.w;
-        far_point  /= far_point.w;
-
-        glm::vec3 ray_origin = glm::vec3(near_point);
-
-        glm::vec3 ray_direction =
-            glm::normalize(
-                glm::vec3(far_point - near_point)
-            );
-
-        glm::mat4 inv_sphere = glm::inverse(sphere_model); 
-        glm::vec3 local_origin = glm::vec3( inv_sphere * glm::vec4(ray_origin, 1.0f) ); 
-        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_sphere * glm::vec4(ray_direction, 0.0f) ) );
-
-        const auto& points = sphere.get_points(); 
-        const auto& indices = sphere.get_indices(); 
-        for (size_t i = 0; i < indices.size(); i += 3) { 
-            unsigned int i0 = indices[i]; 
-            unsigned int i1 = indices[i + 1]; 
-            unsigned int i2 = indices[i + 2];
-            glm::vec3 v0( points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2] ); 
-            glm::vec3 v1( points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2] ); 
-            glm::vec3 v2( points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2] );
-            if (ray_triangle_intersection( local_origin, local_direction, v0, v1, v2)) 
-                { return true; }
+        else if (n == 2)
+        {
+            // Wall / cube
+            return half_mouse_su (cube, wall_model, ray_origin, ray_direction);
         }
-
+        else if (n == 3)
+        {
+            // Sphere
+            return half_mouse_su (sphere, sphere_model, ray_origin, ray_direction);
+        }
+        else if (n == 4)
+        {
+            // room
+            door_hover = half_mouse_su (cube, roomA_door, ray_origin, ray_direction);
+            bool p1 = half_mouse_su (cube, roomA_p1, ray_origin, ray_direction);
+            bool p2 = half_mouse_su (cube, roomA_p2, ray_origin, ray_direction);
+            bool p3 = half_mouse_su (cube, roomA_p3, ray_origin, ray_direction) && door_hover;
+            bool p4 = half_mouse_su (cube, roomA_p4, ray_origin, ray_direction);
+            bool p5 = half_mouse_su (cube, roomA_p5, ray_origin, ray_direction);
+            return (door_hover||p1||p2||p3||p4||p5);
+        }
+        else if (n == 5)
+        {
+            // room
+            door_hover = half_mouse_su (cube, roomA_door, ray_origin, ray_direction);
+            bool p1 = half_mouse_su (cube, roomA_p1, ray_origin, ray_direction);
+            bool p2 = half_mouse_su (cube, roomA_p2, ray_origin, ray_direction);
+            bool p3 = half_mouse_su (cube, roomA_p3, ray_origin, ray_direction);
+            bool p4 = half_mouse_su (cube, roomA_p4, ray_origin, ray_direction);
+            bool p5 = half_mouse_su (cube, roomA_p5, ray_origin, ray_direction);
+            return (door_hover||p1||p2||p3||p4||p5);
+        }
+        
         return false;
     }
 
@@ -1001,10 +832,13 @@ private:
     {
         glm::mat4 mm = bunny_trasforme;
         glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
-        if (!bunny_hover){
+        if (!bunny_hover)
+        {
             glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
             glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
-        }else{
+        }
+        else
+        {
             glUniformMatrix4fv(model_loc_colorato, 1, GL_FALSE, &mm[0][0]);
             glUniformMatrix3fv (tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
         }
@@ -1015,8 +849,16 @@ private:
     {
         glm::mat4 mm = cube_trasforme;
         glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
-        glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
-        glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
+        if (!door_hover)
+        {
+            glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
+            glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
+        }
+        else
+        {
+            glUniformMatrix4fv(model_loc_colorato, 1, GL_FALSE, &mm[0][0]);
+            glUniformMatrix3fv (tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
+        }
         cube.draw ();
     }
 
@@ -1029,33 +871,96 @@ private:
     {
         glm::mat4 mm = sphere_trasforme;
         glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));        
-        if (!sphere_hover){
+        if (!sphere_hover)
+        {
             glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
             glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
-        }else{
+        }
+        else
+        {
             glUniformMatrix4fv(model_loc_colorato, 1, GL_FALSE, &mm[0][0]);
             glUniformMatrix3fv (tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
         }
         sphere.draw ();
     }
 
+    void draw_roomA ()
+    {
+        draw_cube (roomA_p1);
+        draw_cube (roomA_p2);
+        draw_cube (roomA_p3);
+        draw_cube (roomA_p4);
+        draw_cube (roomA_p5);
+        if (door_hover)
+        {
+            shaders_colorato.use();
+            glUniformMatrix4fv(vp_loc_colorato, 1, GL_FALSE, &camera.vp[0][0]);
+        }
+        draw_cube (roomA_door);
+    }
+
+    void draw_roomB ()
+    {
+        draw_cube (roomA_p1);
+        draw_cube (roomA_p2);
+        draw_cube (roomA_p3);
+        draw_cube (roomA_p4);
+        draw_cube (roomA_p5);
+        draw_cube (roomA_door);
+    }
+
     void build_collision_boxes ()
     {
+        float default_margin = 0.5f;
+        float wall_margin = 1.5f;
+        float roomB_margin = 0.8f;
         glm::mat4 scale, translate;
         collision_boxes.clear ();
-        if (level == 1){
-            translate = fcg::translation (0, 0, 8.0f); // push it away
+        if (level == 1)
+        {
+            translate = fcg::translation (0, 0, 8.0f); // push it behind the camera
         }
-        else{
+        else if (level == 4)
+        {
+            translate = fcg::translation (1.0f, 0.6f, 1.0f); // push it in
+        }
+        else if (level == 5) //(0, 0, 5)
+        {
+            scale = fcg::scaling (0.3, 0.3, 0.3);
+            translate = fcg::translation (0, 0, 5.0f);
+            switch(bunny_posto){
+                case 0:
+                    translate = translate * fcg::translation (0, 4.3, 0);
+                    break;
+                case 1:
+                    translate = translate * fcg::translation (0, -4.3, 0);
+                    break;
+                case 2:
+                    translate = translate * fcg::translation (0, 0, 4.3);
+                    break;
+                case 3:
+                    translate = translate * fcg::translation (-4.3, 0, 0);
+                    break;
+                case 4:
+                    translate = translate * fcg::translation (4.3, 0, 0);
+                    break;
+                case 5:
+                    translate = translate * fcg::translation (0, 0, -4.3);
+                    break;
+                default:
+                    break;
+            }
+            translate =  translate * scale;
+        }
+        else
+        {
             translate = fcg::translation (0, 0, -3.0f); // push it away
         }
         bunny_model = translate * bunny.to_unit_extent;
-        float margin = 0.5f;
-        Box bunny_box = bunny.world_bounds(bunny_model);
-        bunny_box = expand_box(bunny_box, margin);
-        collision_boxes.push_back (bunny_box);
-        
-        if (level == 2){
+        add_box_with_margin(bunny_model, default_margin, 1);
+
+        if (level == 2)
+        {
             // Dimensioni del muro: spessore, base, altezza
             float depth = 1.0f;
             float width = bunny.extent.x * 1.5;
@@ -1064,19 +969,144 @@ private:
             scale = fcg::scaling (width, height, depth); // flatten the cube!
             translate = fcg::translation (0, 0, -1.0f); // push it away
             wall_model = translate * scale * cube.to_unit_extent;
-            float wall_margin = 1.5f;
-            Box wall_box = cube.world_bounds(wall_model);
-            wall_box = expand_box(wall_box, wall_margin);
-            collision_boxes.push_back (wall_box);
+            add_box_with_margin (wall_model, wall_margin, 2);
         }
-        else if (level == 3){
+        else if (level == 3)
+        {
             translate = fcg::translation (0, 0, -1.0f); // push it away
             scale = fcg::scaling (1.5f, 1.5f, 1.5f); // flatten the cube!
             sphere_model = translate * scale * sphere.to_unit_extent;
-            Box sphere_box = sphere.world_bounds(sphere_model);
+            add_box_with_margin (sphere_model, default_margin, 3);
+        }
+        else if (level == 4)
+        {
+            float depth = 0.04;
+            float h_depth = depth * 0.5;
+            float height = cube.extent.y *1.5;
+
+            // draw ceiling
+            scale = fcg::scaling (2.0+h_depth, depth, 2.0); // flatten the cube!
+            translate = fcg::translation (-h_depth, height, 0); // lower it up
+            roomA_p1 = translate * scale;
+            add_box_with_margin (roomA_p1, wall_margin, 2);
+
+            // draw floor
+            scale = fcg::scaling (2.0+h_depth, depth, 2.0); // flatten the cube!
+            translate = fcg::translation (-h_depth, - depth, 0); // lower it down
+            roomA_p2 = translate * scale;
+            add_box_with_margin (roomA_p2, wall_margin, 2);
+
+            // draw back wall
+            scale = fcg::scaling (2.0-depth, height, depth); // flatten the cube!
+            translate = fcg::translation (0, 0, 0); // push it away
+            roomA_p3 = translate * scale;
+            add_box_with_margin (roomA_p3, wall_margin, 2);
+
+            // draw left wall
+            scale = fcg::scaling (depth, height, 2.0); // flatten the cube!
+            translate = fcg::translation (- h_depth, 0, 0); // push it to the left
+            roomA_p4 = translate * scale;
+            add_box_with_margin (roomA_p4, wall_margin, 2);
+
+            // draw right wall
+            scale = fcg::scaling (depth, height+depth, 2.0); // flatten the cube!
+            translate = fcg::translation (2.0-depth, -depth, 0); // push it to the right
+            roomA_p5 = translate * scale;
+            add_box_with_margin (roomA_p5, wall_margin, 2);
+
+            // draw door moveable
+            scale = fcg::scaling (2.0+h_depth, height+2*depth, depth); // flatten the cube!
+            translate = fcg::translation (-h_depth, -depth, 2.0); // push it to the front
+            roomA_door = translate * scale;
+            add_box_with_margin (roomA_door, wall_margin, 2);
+        }
+        else if (level == 5)
+        {
+            float depth = 0.04;
+            float side = cube.extent.y *1.5; // side of del cube
+
+            // draw ceiling
+            scale = fcg::scaling (side, depth, side); // flatten the cube!
+            translate = fcg::translation (-side/2, 4.0, 5.0f-side/2); // lower it up
+            roomA_p1 = translate * scale;
+            add_box_with_margin (roomA_p1, roomB_margin, 2);
+
+            // draw floor
+            scale = fcg::scaling (side, depth, side); // flatten the cube!
+            translate = fcg::translation (-side/2, -4.0, 5.0f-side/2); // lower it down
+            roomA_p2 = translate * scale;
+            add_box_with_margin (roomA_p2, roomB_margin, 2);
+
+            // draw back wall
+            scale = fcg::scaling (side, side, depth); // flatten the cube!
+            translate = fcg::translation (-side/2, -side/2, 9.0f); // push it away
+            roomA_p3 = translate * scale;
+            add_box_with_margin (roomA_p3, roomB_margin, 2);
+
+            // draw left wall
+            scale = fcg::scaling (depth, side, side); // flatten the cube!
+            translate = fcg::translation (4.0, -side/2, 5.0f-side/2); // push it to the left
+            roomA_p4 = translate * scale;
+            add_box_with_margin (roomA_p4, roomB_margin, 2);
+
+            // draw right wall
+            scale = fcg::scaling (depth, side, side); // flatten the cube!
+            translate = fcg::translation (-4.0, -side/2, 5.0f-side/2); // push it to the right
+            roomA_p5 = translate * scale;
+            add_box_with_margin (roomA_p5, roomB_margin, 2);
+
+            // draw door moveable
+            scale = fcg::scaling (side, side, depth); // flatten the cube!
+            translate = fcg::translation (-side/2, -side/2, 1.0f); // push it to the front
+            roomA_door = translate * scale;
+            add_box_with_margin (roomA_door, roomB_margin, 2);
+        }
+    }
+
+    void add_box_with_margin (glm::mat4 model, float margin, int tipo)
+    {
+        if(tipo == 1)
+        {
+            // bunny
+            Box bunny_box = bunny.world_bounds(model);
+            bunny_box = expand_box(bunny_box, margin);
+            collision_boxes.push_back (bunny_box);
+        }
+        else if(tipo == 2 || tipo == 4)
+        {
+            // wall
+            Box wall_box = cube.world_bounds(model);
+            wall_box = expand_box(wall_box, margin);
+            collision_boxes.push_back (wall_box);
+        }
+        else if(tipo == 3)
+        {
+            //sphere
+            Box sphere_box = sphere.world_bounds(model);
             sphere_box = expand_box(sphere_box, margin);
             collision_boxes.push_back (sphere_box);
         }
+    }
+
+    bool half_mouse_su (GPUMesh& temp, glm::mat4& model, glm::vec3& ray_origin, glm::vec3& ray_direction)
+    {
+        glm::mat4 inv_model = glm::inverse(model);
+        glm::vec3 local_origin = glm::vec3(inv_model * glm::vec4(ray_origin, 1.0f) ); 
+        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_model * glm::vec4(ray_direction, 0.0f) ) );
+
+        const auto& points = temp.get_points(); 
+        const auto& indices = temp.get_indices(); 
+        for (size_t i = 0; i < indices.size(); i += 3) { 
+            unsigned int i0 = indices[i]; 
+            unsigned int i1 = indices[i + 1]; 
+            unsigned int i2 = indices[i + 2];
+            glm::vec3 v0( points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2] ); 
+            glm::vec3 v1( points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2] ); 
+            glm::vec3 v2( points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2] );
+            if (ray_triangle_intersection( local_origin, local_direction, v0, v1, v2)) 
+                { return true; }
+        }
+        return false;
     }
 };
 
@@ -1085,61 +1115,101 @@ private:
 // SFML Callbacks //
 ////////////////////
 
-void handle (const sf::Event::KeyPressed& key, Scene& scene)
+void handle (const sf::Event::KeyPressed& key, Scene& scene, Camera& camera)
 {
-    if (parte3D){
-        if (key.scancode == sf::Keyboard::Scancode::Escape)
-            exit (0);
-        else if (key.scancode == sf::Keyboard::Scancode::Right)
-        {
-            scene.camera.asse = 1;
-            scene.camera.move_start(true);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::Left)
-        {
-            scene.camera.asse = 1;
-            scene.camera.move_start(false);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::Up)
-        {
-            scene.camera.asse = 2;
-            scene.camera.move_start(true);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::Down)
-        {
-            scene.camera.asse = 2;
-            scene.camera.move_start(false);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::NumpadPlus) // allontanare oggetto
-        {
-            scene.camera.asse = 3;
-            scene.camera.move_start(true);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::NumpadMinus) // avvicinare oggetto
-        {
-            scene.camera.asse = 3;
-            scene.camera.move_start(false);
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::W)
-        {
-            if (scene.sphere_move_on)     scene.direzione = 1;
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::S)
-        {
-            if (scene.sphere_move_on)     scene.direzione = 2;
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::A)
-        {
-            if (scene.sphere_move_on)     scene.direzione = 3;
-        }
-        else if (key.scancode == sf::Keyboard::Scancode::D)
-        {
-            if (scene.sphere_move_on)     scene.direzione = 4;
-        }
+    if (key.scancode == sf::Keyboard::Scancode::Escape)
+    {
+        std::cout<<"hai chiuso il gioco"<<std::endl;
+        exit(0);
     }
-    else{
-        if (key.scancode == sf::Keyboard::Scancode::Escape)
-            exit (0);
+    else if (key.scancode == sf::Keyboard::Scancode::Num1)
+    {
+        scene.level = 1;
+        scene.reload(1);
+        camera.set_default ();
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num2)
+    {
+        scene.level = 2;
+        scene.reload(2);
+        camera.set_default ();
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num3)
+    {
+        scene.level = 3;
+        scene.reload(3);
+        camera.set_default ();
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num4)
+    {
+        scene.level = 4;
+        scene.reload(4);
+        camera.set_default ();
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Num5)
+    {
+        scene.level = 5;
+        scene.reload(5);
+        camera.set_default ();
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Right)
+    {
+        scene.camera.asse = 1;
+        scene.camera.move_start(true);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Left)
+    {
+        scene.camera.asse = 1;
+        scene.camera.move_start(false);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Up)
+    {
+        scene.camera.asse = 2;
+        scene.camera.move_start(true);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Down)
+    {
+        scene.camera.asse = 2;
+        scene.camera.move_start(false);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
+    {
+        scene.camera.asse = 3;
+        scene.camera.move_start(true);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Enter) // avvicinare oggetto
+    {
+        scene.camera.asse = 3;
+        scene.camera.move_start(false);
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::W)
+    {
+        if (scene.sphere_move_on || scene.door_move_on)     scene.direzione = 1;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::S)
+    {
+        if (scene.sphere_move_on || scene.door_move_on)     scene.direzione = 2;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::A)
+    {
+        if (scene.sphere_move_on || scene.door_move_on)     scene.direzione = 3;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::D)
+    {
+        if (scene.sphere_move_on || scene.door_move_on)     scene.direzione = 4;
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::H)
+    {
+        if (scene.level==1)
+            std::cout<<"Per ruotre la visione, fai un clic sul sinistro del muose per smettere di ruotare fai secondo clic"<<std::endl;
+        else if (scene.level==2)
+            std::cout<<"Usare i tasti frecce, Spazio e Invio per spostare la telecamera"<<std::endl;
+        else if (scene.level==3)
+            std::cout<<"fai un clic sul destro del muose sulla sfera per selezionarla poi usa i tasti W,S,A,D per spostare la sfera"<<std::endl;
+        else if (scene.level==4)
+            std::cout<<"fai un clic(destro) sul parete colorato, poi usa i tasti W,S,A,D per spostarlo, così trovi il coniglio"<<std::endl;
+        else if (scene.level==5)
+            std::cout<<"il coniglio si trova dietro a un parete, scoprirlo quale"<<std::endl;
     }
 }
 
@@ -1149,49 +1219,49 @@ void handle (const sf::Event::KeyReleased& key, Scene& scene)
         || key.scancode == sf::Keyboard::Scancode::Left
         || key.scancode == sf::Keyboard::Scancode::Up
         || key.scancode == sf::Keyboard::Scancode::Down
-        || key.scancode == sf::Keyboard::Scancode::NumpadPlus
-        || key.scancode == sf::Keyboard::Scancode::NumpadMinus)
+        || key.scancode == sf::Keyboard::Scancode::Enter
+        || key.scancode == sf::Keyboard::Scancode::Space)
     {
         scene.camera.move_stop();
     }
 }
 
-void handle (const sf::Event::Resized& resized, Menu& menu, Camera& camera)
+void handle (const sf::Event::Resized& resized, Camera& camera)
 {
-    if(!parte3D)
-        menu.reset_size(resized.size.x, resized.size.y);
-    else
-    {
-        glViewport (0, 0, resized.size.x, resized.size.y);
-        camera.set_window_size (resized.size.x, resized.size.y);
-    }
+    glViewport (0, 0, resized.size.x, resized.size.y);
+    camera.set_window_size (resized.size.x, resized.size.y);
 }
 
-void handle (const sf::Event::MouseMoved& mouse_moved, Menu& menu, sf::RenderWindow& window, Scene& scene)
+void handle (const sf::Event::MouseMoved& mouse_moved, sf::Window& window, Scene& scene)
 {
-    if(!parte3D)
-    {
-        sf::FloatRect bounds = menu.sfondo.getGlobalBounds();
-        if(bounds.contains({(float)mouse_moved.position.x, (float)mouse_moved.position.y}))
-            menu.which_level({(float)mouse_moved.position.x, (float)mouse_moved.position.y});
-        else menu.reset_level ();
-    }
-    else
-    {
-        // reset
-        scene.bunny_hover = false;
-        scene.sphere_hover = false;
+    // reset
+    scene.bunny_hover = false;
+    scene.wall_hover = false;
+    scene.sphere_hover = false;
+    scene.roomA_hover = false;
 
-        // Durante la rotazione della telecamera NON fare il ray casting sugli oggetti.
-        if (scene.camera.is_moving())
-            return;
+    // Durante la rotazione della telecamera NON fare il ray casting sugli oggetti.
+    if (scene.camera.is_moving())
+        return;
 
-        if (scene.level == 3)
-        {
-            scene.sphere_hover = scene.mouse_su_sphere (mouse_moved.position, window.getSize());
-        }
-        if (!scene.sphere_hover)    scene.bunny_hover = scene.mouse_su_bunny (mouse_moved.position, window.getSize());
+    if (scene.level == 2)
+    {
+        scene.wall_hover = scene.mouse_su (mouse_moved.position, window.getSize(), 2);
     }
+    else if (scene.level == 3)
+    {
+        scene.sphere_hover = scene.mouse_su (mouse_moved.position, window.getSize(), 3);
+    }
+    else if (scene.level == 4)
+    {
+        scene.roomA_hover = scene.mouse_su (mouse_moved.position, window.getSize(), 4);
+    }
+    else if (scene.level == 5)
+    {
+        scene.wall_hover = scene.mouse_su (mouse_moved.position, window.getSize(), 5);
+    }
+    if (!scene.wall_hover && !scene.sphere_hover && !scene.roomA_hover)    
+        scene.bunny_hover = scene.mouse_su (mouse_moved.position, window.getSize(), 1);
 }
 
 void handle (sf::Vector2f delta, Camera& camera)
@@ -1199,52 +1269,38 @@ void handle (sf::Vector2f delta, Camera& camera)
     camera.pan_tilt (delta.x, delta.y);
 }
 
-void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera, sf::RenderWindow& window, Scene& scene, Menu& menu)
+void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera, sf::Window& window, Scene& scene)
 {
-    if(parte3D)
-    {
-        if (mouse_pressed.button == sf::Mouse::Button::Left) {
-            bool pan_tilt_on = camera.pan_tilt_toggle ();
-            window.setMouseCursorGrabbed (pan_tilt_on);
-            window.setMouseCursorVisible (!pan_tilt_on);
-        }
-        else if (mouse_pressed.button == sf::Mouse::Button::Right)
-        {
-            bool sphere = scene.mouse_su_sphere (mouse_pressed.position, window.getSize());
-            if (scene.level == 3)
-            {
-                if (!scene.sphere_move_on)
-                    scene.sphere_move_on = sphere;
-                else{
-                    scene.sphere_move_on = false;
-                    scene.direzione = -1;
-                }
-            }
-            if (!sphere && scene.mouse_su_bunny (mouse_pressed.position, window.getSize()))
-                parte3D = false;
-            else    parte3D = true;
-        }
+    if (mouse_pressed.button == sf::Mouse::Button::Left) {
+        bool pan_tilt_on = camera.pan_tilt_toggle ();
+        window.setMouseCursorGrabbed (pan_tilt_on);
+        window.setMouseCursorVisible (!pan_tilt_on);
     }
-    else
+    else if (mouse_pressed.button == sf::Mouse::Button::Right)
     {
-        if (mouse_pressed.button == sf::Mouse::Button::Left) 
+        if (scene.level == 3)
         {
-            if(menu.get_level () == 1){
-                parte3D = true;
-                scene.reload(1);
+            if (!scene.sphere_move_on)
+                scene.sphere_move_on = scene.sphere_hover;
+            else{
+                scene.sphere_move_on = false;
+                scene.direzione = -1;
             }
-            else if(menu.get_level () == 2){  
-                parte3D = true;  
-                scene.reload(2);
+        }
+        else if (scene.level == 4)
+        {
+            if (!scene.door_move_on)
+                scene.door_move_on = scene.door_hover;
+            else{
+                scene.door_move_on = false;
+                scene.direzione = -1;
             }
-            else if(menu.get_level () == 3){
-                parte3D = true;
-                scene.reload(3);
-            }
+        }
+        if (!scene.wall_hover && !scene.sphere_hover && scene.bunny_hover){
+            std::cout<<"COMPLIMENTI! hai trovato il coniglio"<<std::endl;
         }
     }
 }
-
 
 //////////
 // Main //
@@ -1252,86 +1308,69 @@ void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera,
 
 int main ()
 {
+    std::cout << "Benvenuto al gioco" << std::endl;
+    std::cout << "L'obiettivo del gioco è trovare il coniglio" << std::endl;
+    std::cout << "Usa la tastiera e il tasto sinistro del mouse per esplorare il mondo" << std::endl;
+    std::cout << "Clicca con il tasto destro del mouse per catturare il coniglio" << std::endl;
+    std::cout << "Premi il tasto H per ottenere aiuto" << std::endl;
+    
     Setup setup;
-    sf::RenderWindow& window = setup.window;
-    Menu menu (setup);
+    sf::Window& window = setup.window;
 
     fcg::Shaders shaders_bianco ("shader/shader_flat.vert", "shader/shader_flat.frag");
     fcg::Shaders shaders_colorato ("shader/shader_normals.vert", "shader/shader_normals.frag");
     shaders_bianco.use();
-    Scene scene ("data/", shaders_bianco, shaders_colorato, 3);
+    Scene scene ("data/", shaders_bianco, shaders_colorato, 5);
 
-    bool last_2D = false;
+    glEnable (GL_CULL_FACE);
+    glCullFace (GL_BACK);
+    glEnable (GL_DEPTH_TEST);
+
     sf::Clock clock;
     bool running = true;
+    float bunny_timer = 0.0f;
     fcg::RawMouse raw_mouse;
     while(running)
     {
-        window.clear();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         while (const std::optional event = window.pollEvent ())
         {
             if (event->is<sf::Event::Closed> ())
                 running = false;
             else if(const auto* resized = event->getIf<sf::Event::Resized> ())
-                handle (* resized, menu, scene.camera);
+                handle (* resized, scene.camera);
             else if(const auto* key_pressed = event->getIf<sf::Event::KeyPressed> ())
-                handle (* key_pressed, scene);
+                handle (* key_pressed, scene, scene.camera);
             else if (const auto* key_released = event->getIf<sf::Event::KeyReleased> ())
                 handle (*key_released, scene);
             else if(const auto* mouse_moved = event->getIf<sf::Event::MouseMoved> ())
-                handle (* mouse_moved, menu, window, scene);
+                handle (* mouse_moved, window, scene);
             else if (const auto* mouse_pressed = event->getIf<sf::Event::MouseButtonPressed> ())
-                handle (*mouse_pressed, scene.camera, window, scene, menu);
+                handle (*mouse_pressed, scene.camera, window, scene);
             else if (const auto* mouse_moved_raw = event->getIf<sf::Event::MouseMovedRaw> ())
                 raw_mouse.event (*mouse_moved_raw);
         }
 
-        if (!parte3D)
+        scene.update();
+        handle (raw_mouse.delta (), scene.camera);
+
+        float elapsed = clock.restart().asSeconds();
+        scene.camera.move (elapsed);
+        scene.move_object (elapsed/3, true);//sphere
+        scene.move_object (elapsed/3, false);//door
+        if (scene.level == 5)
         {
-            last_2D = true;
-            setup.window.pushGLStates();
-
-            glBindVertexArray(0);
-            glUseProgram(0);
-
-            window.resetGLStates();
-
-            window.clear(sf::Color::Black);
-            menu.draw();
-
-            setup.window.popGLStates();
+            bunny_timer += elapsed;
+            if (bunny_timer >= 5.0f)
+            {
+                bunny_timer -= 5.0f;
+                scene.bunny_posto++;
+                if (scene.bunny_posto > 5)    scene.bunny_posto = 0;
+                scene.reload(5);
+            }
         }
-        else
-        {
-            window.resetGLStates();
-
-            glViewport(0, 0, window.getSize().x, window.getSize().y);
-            glEnable (GL_CULL_FACE);
-            glCullFace (GL_BACK);
-            glEnable (GL_DEPTH_TEST);
-
-                scene.update();
-            if (!last_2D)
-            {
-                handle (raw_mouse.delta (), scene.camera);
-                float elapsed = clock.restart().asSeconds();
-                scene.camera.move (elapsed);
-                scene.move_sphere (elapsed/3);
-            }
-            else //reset di camera
-            {
-                scene.camera.set_default();
-                last_2D = false;
-            }
-
-            scene.draw();
-
-            // lascia OpenGL in uno stato pulito
-            glBindVertexArray(0);
-
-            menu.reset_level ();
-        }        
     
+        scene.draw();    
         window.display();
     }
 }

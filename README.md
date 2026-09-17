@@ -30,17 +30,17 @@ Le tappe non richiedono argomenti aggiuntivi da riga di comando.
 
 ### Tastiera
 
-| Comando | Azione |
-|---|---|
-| `H` | Help |
-| `↑` / `↓` / `←` / `→` | spostare telecamera |
-| `+` / `-` numpad | allontanare/avvicinare telecamera |
-| `W` / `S` / `A` / `D` | spostare oggetto mobili selezionato(dal clic destro) |
-| escape | ritornare al punto precedente / uscire dal programma |
+| Comando | Azione | Tappe
+|---|---|---|
+| `H` | Help | da tappa07 |
+| `↑` / `↓` / `←` / `→` | spostare telecamera | da tappa01 |
+| space / enter | allontanare/avvicinare telecamera | da tappa01 |
+| `W` / `S` / `A` / `D` | spostare oggetto mobili selezionato(dal clic destro) | da tappa04 |
+| escape | uscire dal programma | da tappa01 |
+| `1` / `2` / `3` / `4`  / `5` | spostare in vari livelli differenti del gioco | da tappa04 |
 
 se la camera non può oltrepassare oggetti, quando "tocca" gli oggetti genera una collisione (visibile dal sfondo colorato di rosso)
 
 ### note
 
-La Tappa01 non ha comandi interattivi.
 La finestra è ridimensionabile in tutte le tappe.

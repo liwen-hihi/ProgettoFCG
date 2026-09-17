@@ -10,71 +10,61 @@ scegli il livello di difficoltà del gioco, per superare il gioco deve trovare i
    * **glGetUniformLocation() → non richiede che lo shader sia attivo.**
    * **glUniform...() → richiede che sia attivo** il programma shader a cui appartiene la location.
    * Ho dovuto separarli in funzioni diversi, creare ogni funzioni per ogni shader attivo
-4. "quando cerco di mischiare la parte2D con la parte3D genera errore" -> SFML documenta esplicitamente che quando si mescolano rendering SFML e OpenGL **bisogna salvare/ripristinare gli stati OpenGL**; in SFML 3.0.2 sono disponibili:
 
-   * **pushGLStates(),**
-   * **popGLStates()**
-   * **e resetGLStates()**
 
 
 
 ##### tappa01
 
-###### disegnare il menu, i bottoni di livelli, e le parole (tutti allineati al centro)
-
-##### 
-
-##### tappa02
-
-###### quando il mouse si sposta sul bottone del livello, il bottone del livello e il numero del livero cambia il colore
-
-
-
-##### tappa03
-
 ###### disegnare il muro e il coniglio utilizzabili per tutti i livelli, implementare lo spostamento della camera in base a quale bottone cliccato.
 
 
 
-##### tappa04
+##### tappa02
 
 ###### implementare il bounding box, impedire all’osservatore di spostarsi in quel punto e il programma genera una forma di feedback visivo.
 
 
 
-##### tappa05
+##### tappa03
 
 ###### realizzare il picking del coniglio e spostare il coniglio dietro il muro. (livello 2)
 
 
 
-##### tappa06
+##### tappa04
 
-###### realizzare i 3 livelli di gioco e si cambia con i tasti 1, 2, 3.
-
-
-
-##### tappa07
-
-###### mischiare 2D con il 3D e il cambiamento del livello.
+###### il teapot si può spostare con i tasti w a s d. Resize della camera. Cambiare livello 1,2,3 in base ai tasti 1,2,3
 
 
 
-##### tappa08
-
-###### il teapot si può spostare con i tasti w a s d.
-
-
-
-##### tappa09
+##### tappa05
 
 ###### cambia il colore se il mouse si trova sul coniglio oppure sul teiera.
 
 
 
-##### tappa10
+##### tappa06
 
-il menu 2, quando utente clicca sul tasto h (help) per dare aiuto (indicazione). disegnare un messaggio di successo nel riquadro di menu.
+###### il menu 2, quando utente clicca sul tasto h (help) per dare aiuto. dare un messaggio di benvenuto e istruzione generale. Quando cambio i livello la posizione della camera ritorna come default.
+
+
+
+##### tappa07
+
+###### Miglioramento del picking, bool mouse_su (sf::Vector2i position, sf::Vector2u window_size, int n) diventa una funzione generale. Il mouse clicca su wall ha priorità sul mouse su bunny, per evitare al livello 2 se user "trova" il coniglio, nonostante è stato coperto da wall.
+
+
+
+##### tappa08
+
+###### Design del livello 4.
+
+
+
+##### tappa09
+
+###### Design del livello 5.
 
 ---
 
@@ -93,6 +83,5 @@ il menu 2, quando utente clicca sul tasto h (help) per dare aiuto (indicazione).
 * ###### funzioni create da IA
 
   * Box world\_bounds (const glm::mat4\& model) const {}
-  * bool mouse\_su\_bunny (sf::Vector2i position, sf::Vector2u window\_size) {}
-  * bool mouse\_su\_sphere (sf::Vector2i position, sf::Vector2u window\_size) {}
+  * bool mouse\_su\ (sf::Vector2i position, sf::Vector2u window\_size, int n) {}
   * bool ray\_triangle\_intersection(const glm::vec3\& ray\_origin, const glm::vec3\& ray\_direction, const glm::vec3\& v0, const glm::vec3\& v1,  const glm::vec3\& v2) {}
