@@ -200,23 +200,43 @@ public:
     void move (float delta)
     {
         if (!move_on)   return;
+        float phi_rad   = glm::radians(phi_deg + 90.0f);
+        float theta_rad = glm::radians(theta_deg);
+
+        glm::vec3 forward_dir;
+        forward_dir.x = glm::cos(theta_rad) * glm::cos(phi_rad);
+        forward_dir.y = glm::sin(theta_rad);
+        forward_dir.z = glm::cos(theta_rad) * glm::sin(phi_rad);
+        forward_dir = glm::normalize(forward_dir);
+
+        glm::vec3 right_dir;
+        right_dir.x = -glm::sin(phi_rad);
+        right_dir.y = 0.0f;
+        right_dir.z =  glm::cos(phi_rad);
+        right_dir = glm::normalize(right_dir);
+
+        glm::vec3 up_dir = glm::cross(right_dir, forward_dir);
+        up_dir = glm::normalize(up_dir);
+
+        glm::vec3 movement;
         if (asse == 1)
         {
-            if (move_add)    camera_pos.x += delta;
-            else            camera_pos.x -= delta;
+            if (move_add)    movement = delta * right_dir;
+            else            movement = -delta * right_dir;
         }
-        if (asse == 2)
+        else if (asse == 2)
         {
-            if (move_add)    camera_pos.y += delta;
-            else            camera_pos.y -= delta;
+            if (move_add)    movement = delta * up_dir;
+            else            movement = -delta * up_dir;
 
         }
-        if (asse == 3)
+        else if (asse == 3)
         {
-            if (move_add)    camera_pos.z += delta;
-            else            camera_pos.z -= delta;
-
+            if (move_add)    movement = delta * forward_dir;
+            else            movement = -delta * forward_dir;
         }
+
+        camera_pos = camera_pos + movement;
         view_projection ();
     }
 
@@ -458,32 +478,32 @@ void handle (const sf::Event::KeyPressed& key, Scene& scene)
     else if (key.scancode == sf::Keyboard::Scancode::Right)
     {
         scene.camera.asse = 1;
-        scene.camera.move_start(true);
+        scene.camera.move_start(false);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Left)
     {
         scene.camera.asse = 1;
-        scene.camera.move_start(false);
+        scene.camera.move_start(true);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Up)
     {
-        scene.camera.asse = 2;
-        scene.camera.move_start(true);
+        scene.camera.asse = 3;
+        scene.camera.move_start(false);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Down)
     {
-        scene.camera.asse = 2;
-        scene.camera.move_start(false);
-    }
-    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
-    {
         scene.camera.asse = 3;
         scene.camera.move_start(true);
     }
+    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
+    {
+        scene.camera.asse = 2;
+        scene.camera.move_start(false);
+    }
     else if (key.scancode == sf::Keyboard::Scancode::Enter) // avvicinare oggetto
     {
-        scene.camera.asse = 3;
-        scene.camera.move_start(false);
+        scene.camera.asse = 2;
+        scene.camera.move_start(true);
     }
 }
 

@@ -347,25 +347,43 @@ public:
     void move (float delta)
     {
         if (!move_on)   return;
+        float phi_rad   = glm::radians(phi_deg + 90.0f);
+        float theta_rad = glm::radians(theta_deg);
 
-        glm::vec3 candidate = camera_pos;
+        glm::vec3 forward_dir;
+        forward_dir.x = glm::cos(theta_rad) * glm::cos(phi_rad);
+        forward_dir.y = glm::sin(theta_rad);
+        forward_dir.z = glm::cos(theta_rad) * glm::sin(phi_rad);
+        forward_dir = glm::normalize(forward_dir);
+
+        glm::vec3 right_dir;
+        right_dir.x = -glm::sin(phi_rad);
+        right_dir.y = 0.0f;
+        right_dir.z =  glm::cos(phi_rad);
+        right_dir = glm::normalize(right_dir);
+
+        glm::vec3 up_dir = glm::cross(right_dir, forward_dir);
+        up_dir = glm::normalize(up_dir);
+
+        glm::vec3 movement;
         if (asse == 1)
         {
-            if (move_add)    candidate.x += delta;
-            else            candidate.x -= delta;
+            if (move_add)    movement = delta * right_dir;
+            else            movement = -delta * right_dir;
         }
-        if (asse == 2)
+        else if (asse == 2)
         {
-            if (move_add)    candidate.y += delta;
-            else            candidate.y -= delta;
+            if (move_add)    movement = delta * up_dir;
+            else            movement = -delta * up_dir;
 
         }
-        if (asse == 3)
+        else if (asse == 3)
         {
-            if (move_add)    candidate.z += delta;
-            else            candidate.z -= delta;
+            if (move_add)    movement = delta * forward_dir;
+            else            movement = -delta * forward_dir;
         }
 
+        glm::vec3 candidate = camera_pos + movement;
         // Calcola la posizione che raggiungeremmo durante questo frame. // Non entrare nel riquadro di delimitazione di un oggetto fisso.
         if (collides(candidate))
         {
@@ -689,7 +707,7 @@ public:
             glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
             draw_bunny (bunny_model);
         }
-        if (level == 2){
+        if (level == 1 || level == 2){
             shaders_bianco.use();
             glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
             draw_wall();
@@ -875,8 +893,21 @@ private:
         float margin = 0.5f;
         Box bunny_box = bunny.world_bounds(bunny_model);
         bunny_box = expand_box(bunny_box, margin);
-        collision_boxes.push_back (bunny_box);
+        collision_boxes.push_back (bunny_box);        
         
+        if (level == 1)
+        {
+            float height = 0.1f;
+            float late = bunny.extent.x * 5;
+            // draw floor
+            scale = fcg::scaling (late, height, late); // flatten the cube!
+            translate = fcg::translation (0, -1.0f, 2.0f); // push it away
+            wall_model = translate * scale * cube.to_unit_extent;
+            float wall_margin = 1.5f;
+            Box wall_box = cube.world_bounds(wall_model);
+            wall_box = expand_box(wall_box, wall_margin);
+            collision_boxes.push_back (wall_box);
+        }
         if (level == 2)
         {
             // Dimensioni del muro: spessore, base, altezza
@@ -938,32 +969,32 @@ void handle (const sf::Event::KeyPressed& key, Scene& scene, Camera& camera)
     else if (key.scancode == sf::Keyboard::Scancode::Right)
     {
         scene.camera.asse = 1;
-        scene.camera.move_start(true);
+        scene.camera.move_start(false);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Left)
     {
         scene.camera.asse = 1;
-        scene.camera.move_start(false);
+        scene.camera.move_start(true);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Up)
     {
-        scene.camera.asse = 2;
-        scene.camera.move_start(true);
+        scene.camera.asse = 3;
+        scene.camera.move_start(false);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Down)
     {
-        scene.camera.asse = 2;
-        scene.camera.move_start(false);
-    }
-    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
-    {
         scene.camera.asse = 3;
         scene.camera.move_start(true);
     }
+    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
+    {
+        scene.camera.asse = 2;
+        scene.camera.move_start(false);
+    }
     else if (key.scancode == sf::Keyboard::Scancode::Enter) // avvicinare oggetto
     {
-        scene.camera.asse = 3;
-        scene.camera.move_start(false);
+        scene.camera.asse = 2;
+        scene.camera.move_start(true);
     }
     else if (key.scancode == sf::Keyboard::Scancode::W)
     {

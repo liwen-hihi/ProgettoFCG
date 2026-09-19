@@ -34,19 +34,19 @@ scegli il livello di difficoltà del gioco, per superare il gioco deve trovare i
 
 ##### tappa04
 
-###### il teapot si può spostare con i tasti w a s d. Resize della camera. Cambiare livello 1,2,3 in base ai tasti 1,2,3
+###### il menu 2, quando utente clicca sul tasto h (help) per dare aiuto. dare un messaggio di benvenuto e istruzione generale. Quando cambio i livello la posizione della camera ritorna come default.
 
 
 
 ##### tappa05
 
-###### cambia il colore se il mouse si trova sul coniglio oppure sul teiera.
+###### il teapot si può spostare con i tasti w a s d. Resize della camera. Cambiare livello 1,2,3 in base ai tasti 1,2,3
 
 
 
 ##### tappa06
 
-###### il menu 2, quando utente clicca sul tasto h (help) per dare aiuto. dare un messaggio di benvenuto e istruzione generale. Quando cambio i livello la posizione della camera ritorna come default.
+###### cambia il colore se il mouse si trova sul coniglio oppure sul teiera.
 
 
 

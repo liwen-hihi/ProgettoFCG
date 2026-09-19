@@ -298,26 +298,43 @@ public:
     void move (float delta)
     {
         if (!move_on)   return;
+        float phi_rad   = glm::radians(phi_deg + 90.0f);
+        float theta_rad = glm::radians(theta_deg);
 
-        glm::vec3 candidate = camera_pos;
+        glm::vec3 forward_dir;
+        forward_dir.x = glm::cos(theta_rad) * glm::cos(phi_rad);
+        forward_dir.y = glm::sin(theta_rad);
+        forward_dir.z = glm::cos(theta_rad) * glm::sin(phi_rad);
+        forward_dir = glm::normalize(forward_dir);
+
+        glm::vec3 right_dir;
+        right_dir.x = -glm::sin(phi_rad);
+        right_dir.y = 0.0f;
+        right_dir.z =  glm::cos(phi_rad);
+        right_dir = glm::normalize(right_dir);
+
+        glm::vec3 up_dir = glm::cross(right_dir, forward_dir);
+        up_dir = glm::normalize(up_dir);
+
+        glm::vec3 movement;
         if (asse == 1)
         {
-            if (move_add)    candidate.x += delta;
-            else            candidate.x -= delta;
+            if (move_add)    movement = delta * right_dir;
+            else            movement = -delta * right_dir;
         }
-        if (asse == 2)
+        else if (asse == 2)
         {
-            if (move_add)    candidate.y += delta;
-            else            candidate.y -= delta;
+            if (move_add)    movement = delta * up_dir;
+            else            movement = -delta * up_dir;
 
         }
-        if (asse == 3)
+        else if (asse == 3)
         {
-            if (move_add)    candidate.z += delta;
-            else            candidate.z -= delta;
-
+            if (move_add)    movement = delta * forward_dir;
+            else            movement = -delta * forward_dir;
         }
 
+        glm::vec3 candidate = camera_pos + movement;
         // Calcola la posizione che raggiungeremmo durante questo frame. // Non entrare nel riquadro di delimitazione di un oggetto fisso.
         if (collides(candidate))
         {
@@ -333,6 +350,20 @@ public:
     {
         fd = normal_fd;
         view_projection ();
+    }
+
+    void set_default ()
+    {
+        camera_pos = camera_default;
+        phi_deg = 0.0f;
+        theta_deg = 0.0f;
+
+        pan_tilt_on = false;
+        move_on = false;
+        move_add = false;
+
+        lens_normal();
+        collision = false;
     }
 
     void view_projection ()
@@ -428,7 +459,7 @@ public:
     Box world_bounds (const glm::mat4& model) const
     {
         // 8 angoli del bounding box locale
-        glm::vec3 spheres[8] = {
+        glm::vec3 corners[8] = {
             {min_bounds.x, min_bounds.y, min_bounds.z},
             {min_bounds.x, min_bounds.y, max_bounds.z},
             {min_bounds.x, max_bounds.y, min_bounds.z},
@@ -438,12 +469,12 @@ public:
             {max_bounds.x, max_bounds.y, min_bounds.z},
             {max_bounds.x, max_bounds.y, max_bounds.z}
         };
-        glm::vec3 world_min = glm::vec3(model * glm::vec4(spheres[0], 1.0f));
+        glm::vec3 world_min = glm::vec3(model * glm::vec4(corners[0], 1.0f));
         glm::vec3 world_max = world_min;
 
         for (int i = 1; i < 8; ++i)
         {
-            glm::vec3 p = glm::vec3(model * glm::vec4(spheres[i], 1.0f));
+            glm::vec3 p = glm::vec3(model * glm::vec4(corners[i], 1.0f));
             world_min = glm::min(world_min, p);
             world_max = glm::max(world_max, p);
         }
@@ -510,7 +541,7 @@ private:
     GLint tr_inv_model_loc;
 
     std::vector<Box> collision_boxes;
-    glm::mat4 bunny_model, wall_model, sphere_model;
+    glm::mat4 bunny_model, wall_model;
 
 public:
     Scene (std::string dirname, fcg::Shaders& shaders, int n) :
@@ -565,36 +596,9 @@ public:
         glUniformMatrix4fv(vp_loc, 1, GL_FALSE, &camera.vp[0][0]); // vp = Projection(prospettiva della telecamera) × View(posizione della telecamera)
 
         draw_bunny (bunny_model);
-        if (level == 2)    draw_wall();
-        else if(level == 3)   draw_sphere(sphere_model);
+        draw_wall();
 
         camera.clear_collision_feedback ();
-    }
-
-    void move_sphere (float delta)
-    {
-        if (!sphere_move_on || direzione == -1)
-            return;
-        else if (direzione == 1)
-        {
-            glm::mat4 translate = fcg::translation (0, delta, 0);
-            sphere_model = translate * sphere_model;
-        }
-        else if (direzione == 2)
-        {
-            glm::mat4 translate = fcg::translation (0, -delta, 0);
-            sphere_model = translate * sphere_model;
-        }
-        else if (direzione == 3)
-        {
-            glm::mat4 translate = fcg::translation (-delta, 0, 0);
-            sphere_model = translate * sphere_model;
-        }
-        else if (direzione == 4)
-        {
-            glm::mat4 translate = fcg::translation (delta, 0, 0);
-            sphere_model = translate * sphere_model;
-        }
     }
 
     bool mouse_su_bunny (sf::Vector2i position, sf::Vector2u window_size)
@@ -645,59 +649,12 @@ public:
         return false;
     }
 
-    bool mouse_su_sphere (sf::Vector2i position, sf::Vector2u window_size)
-    {
-        float x =
-            2.0f * static_cast<float>(position.x)
-            / static_cast<float>(window_size.x) - 1.0f;
-
-        float y =
-            1.0f - 2.0f * static_cast<float>(position.y)
-            / static_cast<float>(window_size.y);
-
-        glm::vec4 near_point(x, y, -1.0f, 1.0f);
-        glm::vec4 far_point (x, y,  1.0f, 1.0f);
-
-        glm::mat4 inv_vp = glm::inverse(camera.vp);
-
-        near_point = inv_vp * near_point;
-        far_point  = inv_vp * far_point;
-
-        near_point /= near_point.w;
-        far_point  /= far_point.w;
-
-        glm::vec3 ray_origin = glm::vec3(near_point);
-
-        glm::vec3 ray_direction =
-            glm::normalize(
-                glm::vec3(far_point - near_point)
-            );
-
-        glm::mat4 inv_sphere = glm::inverse(sphere_model); 
-        glm::vec3 local_origin = glm::vec3( inv_sphere * glm::vec4(ray_origin, 1.0f) ); 
-        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_sphere * glm::vec4(ray_direction, 0.0f) ) );
-
-        const auto& points = sphere.get_points(); 
-        const auto& indices = sphere.get_indices(); 
-        for (size_t i = 0; i < indices.size(); i += 3) { 
-            unsigned int i0 = indices[i]; 
-            unsigned int i1 = indices[i + 1]; 
-            unsigned int i2 = indices[i + 2];
-            glm::vec3 v0( points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2] ); 
-            glm::vec3 v1( points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2] ); 
-            glm::vec3 v2( points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2] );
-            if (ray_triangle_intersection( local_origin, local_direction, v0, v1, v2)) 
-                { return true; }
-        }
-
-        return false;
-    }
-
 private: 
     void draw_bunny (glm::mat4 bunny_trasforme)
     {
         glm::mat4 mm = bunny_trasforme;
-        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
+        glm::mat3 ti_mm;
+        ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
         glUniformMatrix4fv(model_loc, 1, GL_FALSE, &mm[0][0]);
         glUniformMatrix3fv (tr_inv_model_loc, 1, GL_FALSE, &ti_mm[0][0]);
         bunny.draw ();
@@ -712,58 +669,34 @@ private:
         cube.draw ();
     }
 
-    void draw_wall ()
+    void draw_wall()
     {
         draw_cube (wall_model);
-    }
-
-    void draw_sphere (glm::mat4 sphere_trasforme)
-    {
-        glm::mat4 mm = sphere_trasforme;
-        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, &mm[0][0]);
-        glUniformMatrix3fv (tr_inv_model_loc, 1, GL_FALSE, &ti_mm[0][0]);
-        sphere.draw ();
     }
 
     void build_collision_boxes ()
     {
         glm::mat4 scale, translate;
         collision_boxes.clear ();
-        if (level == 1){
-            translate = fcg::translation (0, 0, 8.0f); // push it away
-        }
-        else{
-            translate = fcg::translation (0, 0, -3.0f); // push it away
-        }
+        translate = fcg::translation (0, 0, -3.0f); // push it away
         bunny_model = translate * bunny.to_unit_extent;
-        float margin = 0.5f;
+        float bunny_margin = 0.3f;
         Box bunny_box = bunny.world_bounds(bunny_model);
-        bunny_box = expand_box(bunny_box, margin);
+        bunny_box = expand_box(bunny_box, bunny_margin);
         collision_boxes.push_back (bunny_box);
         
-        if (level == 2){
-            // Dimensioni del muro: spessore, base, altezza
-            float depth = 1.0f;
-            float width = bunny.extent.x * 1.5;
-            float height = width *(3.0f/4.0f);
-            // draw back wall
-            scale = fcg::scaling (width, height, depth); // flatten the cube!
-            translate = fcg::translation (0, 0, -1.0f); // push it away
-            wall_model = translate * scale * cube.to_unit_extent;
-            float wall_margin = 1.5f;
-            Box wall_box = cube.world_bounds(wall_model);
-            wall_box = expand_box(wall_box, wall_margin);
-            collision_boxes.push_back (wall_box);
-        }
-        else if (level == 3){
-            translate = fcg::translation (0, 0, -1.0f); // push it away
-            scale = fcg::scaling (1.5f, 1.5f, 1.5f); // flatten the cube!
-            sphere_model = translate * scale * sphere.to_unit_extent;
-            Box sphere_box = sphere.world_bounds(sphere_model);
-            sphere_box = expand_box(sphere_box, margin);
-            collision_boxes.push_back (sphere_box);
-        }
+        // Dimensioni del muro: spessore, base, altezza
+        float depth = 1.0f;
+        float width = bunny.extent.x * 1.5;
+        float height = width *(3.0f/4.0f);
+        // draw back wall
+        scale = fcg::scaling (width, height, depth); // flatten the cube!
+        translate = fcg::translation (0, 0, -1.0f); // push it away
+        wall_model = translate * scale * cube.to_unit_extent;
+        float wall_margin = 0.5f;
+        Box wall_box = cube.world_bounds(wall_model);
+        wall_box = expand_box(wall_box, wall_margin);
+        collision_boxes.push_back (wall_box);
     }
 };
 
@@ -772,7 +705,7 @@ private:
 // SFML Callbacks //
 ////////////////////
 
-void handle (const sf::Event::KeyPressed& key, Scene& scene)
+void handle (const sf::Event::KeyPressed& key, Scene& scene, Camera& camera)
 {
     if (key.scancode == sf::Keyboard::Scancode::Escape)
     {
@@ -783,46 +716,49 @@ void handle (const sf::Event::KeyPressed& key, Scene& scene)
     {
         scene.level = 1;
         scene.reload(1);
+        camera.set_default ();
     }
     else if (key.scancode == sf::Keyboard::Scancode::Num2)
     {
         scene.level = 2;
         scene.reload(2);
+        camera.set_default ();
     }
     else if (key.scancode == sf::Keyboard::Scancode::Num3)
     {
         scene.level = 3;
         scene.reload(3);
+        camera.set_default ();
     }
     else if (key.scancode == sf::Keyboard::Scancode::Right)
     {
         scene.camera.asse = 1;
-        scene.camera.move_start(true);
+        scene.camera.move_start(false);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Left)
     {
         scene.camera.asse = 1;
-        scene.camera.move_start(false);
+        scene.camera.move_start(true);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Up)
     {
-        scene.camera.asse = 2;
-        scene.camera.move_start(true);
+        scene.camera.asse = 3;
+        scene.camera.move_start(false);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Down)
     {
-        scene.camera.asse = 2;
-        scene.camera.move_start(false);
-    }
-    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
-    {
         scene.camera.asse = 3;
         scene.camera.move_start(true);
     }
+    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
+    {
+        scene.camera.asse = 2;
+        scene.camera.move_start(false);
+    }
     else if (key.scancode == sf::Keyboard::Scancode::Enter) // avvicinare oggetto
     {
-        scene.camera.asse = 3;
-        scene.camera.move_start(false);
+        scene.camera.asse = 2;
+        scene.camera.move_start(true);
     }
     else if (key.scancode == sf::Keyboard::Scancode::W)
     {
@@ -840,6 +776,15 @@ void handle (const sf::Event::KeyPressed& key, Scene& scene)
     {
         if (scene.sphere_move_on)     scene.direzione = 4;
     }
+    else if (key.scancode == sf::Keyboard::Scancode::H)
+    {
+        if (scene.level==1)
+            std::cout<<"Per ruotre la visione, fai un clic sul sinistro del muose per smettere di ruotare fai secondo clic"<<std::endl;
+        else if (scene.level==2)
+            std::cout<<"Usare i tasti frecce, Spazio e Invio per spostare la telecamera"<<std::endl;
+        else if (scene.level==3)
+            std::cout<<"fai un clic sul destro del muose sulla sfera per selezionarla poi usa i tasti W,S,A,D per spostare la sfera"<<std::endl;
+    }
 }
 
 void handle (const sf::Event::KeyReleased& key, Scene& scene)
@@ -848,8 +793,8 @@ void handle (const sf::Event::KeyReleased& key, Scene& scene)
         || key.scancode == sf::Keyboard::Scancode::Left
         || key.scancode == sf::Keyboard::Scancode::Up
         || key.scancode == sf::Keyboard::Scancode::Down
-        || key.scancode == sf::Keyboard::Scancode::Space
-        || key.scancode == sf::Keyboard::Scancode::Enter)
+        || key.scancode == sf::Keyboard::Scancode::Enter
+        || key.scancode == sf::Keyboard::Scancode::Space)
     {
         scene.camera.move_stop();
     }
@@ -861,7 +806,7 @@ void handle (const sf::Event::Resized& resized, Camera& camera)
     camera.set_window_size (resized.size.x, resized.size.y);
 }
 
-void handle (const sf::Event::MouseMoved& mouse_moved)
+void handle (const sf::Event::MouseMoved& mouse_moved, sf::Window& window, Scene& scene)
 {
     // se il mouse si trova su oggetti mobili cambia colore degli oggetti
 }
@@ -880,22 +825,13 @@ void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera,
     }
     else if (mouse_pressed.button == sf::Mouse::Button::Right)
     {
-        bool sphere = scene.mouse_su_sphere (mouse_pressed.position, window.getSize());
-        if (scene.level == 3)
+        if (scene.mouse_su_bunny (mouse_pressed.position, window.getSize()))
         {
-            if (!scene.sphere_move_on)
-                scene.sphere_move_on = sphere;
-            else{
-                scene.sphere_move_on = false;
-                scene.direzione = -1;
-            }
-        }
-        if (!sphere && scene.mouse_su_bunny (mouse_pressed.position, window.getSize()))
             std::cout<<"COMPLIMENTI! hai trovato il coniglio"<<std::endl;
-
+            exit (0);
+        }
     }
 }
-
 
 //////////
 // Main //
@@ -903,6 +839,12 @@ void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera,
 
 int main ()
 {
+    std::cout << "Benvenuto al gioco" << std::endl;
+    std::cout << "L'obiettivo del gioco è trovare il coniglio" << std::endl;
+    std::cout << "Usa la tastiera e il tasto sinistro del mouse per esplorare il mondo" << std::endl;
+    std::cout << "Clicca con il tasto destro del mouse per catturare il coniglio" << std::endl;
+    std::cout << "Premi il tasto H per ottenere aiuto" << std::endl;
+    
     Setup setup;
     sf::Window& window = setup.window;
 
@@ -928,11 +870,11 @@ int main ()
             else if(const auto* resized = event->getIf<sf::Event::Resized> ())
                 handle (* resized, scene.camera);
             else if(const auto* key_pressed = event->getIf<sf::Event::KeyPressed> ())
-                handle (* key_pressed, scene);
+                handle (* key_pressed, scene, scene.camera);
             else if (const auto* key_released = event->getIf<sf::Event::KeyReleased> ())
                 handle (*key_released, scene);
             else if(const auto* mouse_moved = event->getIf<sf::Event::MouseMoved> ())
-                handle (* mouse_moved);
+                handle (* mouse_moved, window, scene);
             else if (const auto* mouse_pressed = event->getIf<sf::Event::MouseButtonPressed> ())
                 handle (*mouse_pressed, scene.camera, window, scene);
             else if (const auto* mouse_moved_raw = event->getIf<sf::Event::MouseMovedRaw> ())
@@ -944,10 +886,8 @@ int main ()
 
         float elapsed = clock.restart().asSeconds();
         scene.camera.move (elapsed);
-        scene.move_sphere (elapsed/3);
-        scene.lights.send_position_relative (scene.camera.inv_v);
-
-        scene.draw();
+    
+        scene.draw();    
         window.display();
     }
 }

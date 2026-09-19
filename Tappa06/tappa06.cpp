@@ -23,30 +23,27 @@ struct Box
     glm::vec3 min;
     glm::vec3 max;
 
-    bool contains (const glm::vec3& p) const
+    bool contains(const glm::vec3 &p) const
     {
-        return p.x >= min.x && p.x <= max.x
-            && p.y >= min.y && p.y <= max.y
-            && p.z >= min.z && p.z <= max.z;
+        return p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y && p.z >= min.z && p.z <= max.z;
     }
 };
 
-Box expand_box(const Box& box, float margin)
+Box expand_box(const Box &box, float margin)
 {
     glm::vec3 offset(margin, margin, margin);
 
     return {
         box.min - offset,
-        box.max + offset
-    };
+        box.max + offset};
 }
 
 bool ray_triangle_intersection(
-    const glm::vec3& ray_origin,
-    const glm::vec3& ray_direction,
-    const glm::vec3& v0,
-    const glm::vec3& v1,
-    const glm::vec3& v2)
+    const glm::vec3 &ray_origin,
+    const glm::vec3 &ray_direction,
+    const glm::vec3 &v0,
+    const glm::vec3 &v1,
+    const glm::vec3 &v2)
 {
     const float EPSILON = 0.000001f;
 
@@ -96,7 +93,7 @@ public:
 
     sf::Window window;
 
-    Setup ()
+    Setup()
     {
         sf::ContextSettings settings;
         settings.depthBits = 24;
@@ -107,11 +104,12 @@ public:
         settings.minorVersion = 1;
 
         window.create(sf::VideoMode({window_width, window_height}), "SFML + OpenGL", sf::Style::Default, sf::State::Windowed, settings);
-        window.setVerticalSyncEnabled (true);
+        window.setVerticalSyncEnabled(true);
 
-        if (!window.setActive (true)) {
+        if (!window.setActive(true))
+        {
             std::cerr << "Failure: error during SFML OpenGL Activation." << std::endl;
-            exit (1);
+            exit(1);
         }
 
         gladLoadGL(reinterpret_cast<GLADloadfunc>(sf::Context::getFunction));
@@ -126,18 +124,17 @@ class Lights
 {
 public:
     glm::vec3 light_direct_pos_relative = {2.0, 2.0, 0.0}; // xyz (relative to camera position)
-    glm::vec3 light_direct_pos = {0.0, 0.0, 0.0};   // xyz (absolute, in world coordinates)
-    glm::vec3 light_direct_val = {1.0, 1.0, 1.0};   // rgb
-    glm::vec3 light_ambient_val = {0.1, 0.1, 0.1};  // rgb
-    glm::vec3 material_diffuse = {0.8, 0.7, 0.6};   // rgb
-    glm::vec3 material_ambient = {0.5, 0.5, 0.8};   // rgb
-    glm::vec3 material_specular = {1.0, 1.0, 1.0};  // rgb
-    float material_shininess = 1000.0; // scalar
+    glm::vec3 light_direct_pos = {0.0, 0.0, 0.0};          // xyz (absolute, in world coordinates)
+    glm::vec3 light_direct_val = {1.0, 1.0, 1.0};          // rgb
+    glm::vec3 light_ambient_val = {0.1, 0.1, 0.1};         // rgb
+    glm::vec3 material_diffuse = {0.8, 0.7, 0.6};          // rgb
+    glm::vec3 material_ambient = {0.5, 0.5, 0.8};          // rgb
+    glm::vec3 material_specular = {1.0, 1.0, 1.0};         // rgb
+    float material_shininess = 1000.0;                     // scalar
 
     bool bianco = true;
 
 private:
-    
     GLint light_direct_pos_loc_bianco;   // xyz
     GLint light_direct_val_loc_bianco;   // rgb
     GLint light_ambient_val_loc_bianco;  // rgb
@@ -155,20 +152,20 @@ private:
     GLint material_shininess_loc_colorato; // scalar
 
 public:
-    Lights (fcg::Shaders& shaders__bianco, fcg::Shaders& shaders__colorato)
+    Lights(fcg::Shaders &shaders__bianco, fcg::Shaders &shaders__colorato)
     {
-        locations (shaders__bianco, shaders__colorato);
+        locations(shaders__bianco, shaders__colorato);
     }
 
-    void locations (fcg::Shaders& shaders__bianco, fcg::Shaders& shaders__colorato)
+    void locations(fcg::Shaders &shaders__bianco, fcg::Shaders &shaders__colorato)
     {
-        light_direct_pos_loc_bianco = glGetUniformLocation (shaders__bianco.program, "light.direct_pos");
-        light_direct_val_loc_bianco = glGetUniformLocation (shaders__bianco.program, "light.direct_val");
-        light_ambient_val_loc_bianco = glGetUniformLocation (shaders__bianco.program, "light.ambient_val");
-        material_diffuse_loc_bianco = glGetUniformLocation (shaders__bianco.program, "material.diffuse");
-        material_ambient_loc_bianco = glGetUniformLocation (shaders__bianco.program, "material.ambient");
-        material_specular_loc_bianco = glGetUniformLocation (shaders__bianco.program, "material.specular");
-        material_shininess_loc_bianco = glGetUniformLocation (shaders__bianco.program, "material.shininess");
+        light_direct_pos_loc_bianco = glGetUniformLocation(shaders__bianco.program, "light.direct_pos");
+        light_direct_val_loc_bianco = glGetUniformLocation(shaders__bianco.program, "light.direct_val");
+        light_ambient_val_loc_bianco = glGetUniformLocation(shaders__bianco.program, "light.ambient_val");
+        material_diffuse_loc_bianco = glGetUniformLocation(shaders__bianco.program, "material.diffuse");
+        material_ambient_loc_bianco = glGetUniformLocation(shaders__bianco.program, "material.ambient");
+        material_specular_loc_bianco = glGetUniformLocation(shaders__bianco.program, "material.specular");
+        material_shininess_loc_bianco = glGetUniformLocation(shaders__bianco.program, "material.shininess");
 
         light_direct_pos_loc_colorato = glGetUniformLocation(shaders__colorato.program, "light.direct_pos");
         light_direct_val_loc_colorato = glGetUniformLocation(shaders__colorato.program, "light.direct_val");
@@ -179,43 +176,45 @@ public:
         material_shininess_loc_colorato = glGetUniformLocation(shaders__colorato.program, "material.shininess");
     }
 
-    void send_parameters_bianco ()
+    void send_parameters_bianco()
     {
-        glUniform3fv (light_direct_val_loc_bianco, 1, &light_direct_val[0]);
-        glUniform3fv (light_ambient_val_loc_bianco, 1, &light_ambient_val[0]);
-        glUniform3fv (material_diffuse_loc_bianco, 1, &material_diffuse[0]);
-        glUniform3fv (material_ambient_loc_bianco, 1, &material_ambient[0]);
-        glUniform3fv (material_specular_loc_bianco, 1, &material_specular[0]);
-        glUniform1fv (material_shininess_loc_bianco, 1, &material_shininess);
+        glUniform3fv(light_direct_val_loc_bianco, 1, &light_direct_val[0]);
+        glUniform3fv(light_ambient_val_loc_bianco, 1, &light_ambient_val[0]);
+        glUniform3fv(material_diffuse_loc_bianco, 1, &material_diffuse[0]);
+        glUniform3fv(material_ambient_loc_bianco, 1, &material_ambient[0]);
+        glUniform3fv(material_specular_loc_bianco, 1, &material_specular[0]);
+        glUniform1fv(material_shininess_loc_bianco, 1, &material_shininess);
     }
 
-    void send_parameters_colorato ()
+    void send_parameters_colorato()
     {
-        glUniform3fv (light_direct_val_loc_colorato, 1, &light_direct_val[0]);
-        glUniform3fv (light_ambient_val_loc_colorato, 1, &light_ambient_val[0]);
-        glUniform3fv (material_diffuse_loc_colorato, 1, &material_diffuse[0]);
-        glUniform3fv (material_ambient_loc_colorato, 1, &material_ambient[0]);
-        glUniform3fv (material_specular_loc_colorato, 1, &material_specular[0]);
-        glUniform1fv (material_shininess_loc_colorato, 1, &material_shininess);
+        glUniform3fv(light_direct_val_loc_colorato, 1, &light_direct_val[0]);
+        glUniform3fv(light_ambient_val_loc_colorato, 1, &light_ambient_val[0]);
+        glUniform3fv(material_diffuse_loc_colorato, 1, &material_diffuse[0]);
+        glUniform3fv(material_ambient_loc_colorato, 1, &material_ambient[0]);
+        glUniform3fv(material_specular_loc_colorato, 1, &material_specular[0]);
+        glUniform1fv(material_shininess_loc_colorato, 1, &material_shininess);
     }
 
-    void send_position_relative (const glm::mat4& inverse_view_matrix)
+    void send_position_relative(const glm::mat4 &inverse_view_matrix)
     {
-        glm::vec4 p = glm::vec4 (light_direct_pos_relative, 1.0);
+        glm::vec4 p = glm::vec4(light_direct_pos_relative, 1.0);
         p = inverse_view_matrix * p;
         light_direct_pos = {p.x, p.y, p.z};
-        if(bianco)    send_position_bianco();
-        else    send_position_colorato ();
+        if (bianco)
+            send_position_bianco();
+        else
+            send_position_colorato();
     }
 
-    void send_position_bianco ()
+    void send_position_bianco()
     {
-        glUniform3fv (light_direct_pos_loc_bianco, 1, &light_direct_pos[0]);
+        glUniform3fv(light_direct_pos_loc_bianco, 1, &light_direct_pos[0]);
     }
 
-    void send_position_colorato ()
+    void send_position_colorato()
     {
-        glUniform3fv (light_direct_pos_loc_colorato, 1, &light_direct_pos[0]);
+        glUniform3fv(light_direct_pos_loc_colorato, 1, &light_direct_pos[0]);
     }
 };
 
@@ -251,79 +250,85 @@ private:
     bool move_add = false;
 
     // Bounding boxes of all fixed objects in world coordinates.
-    const std::vector<Box>* collision_boxes = nullptr;
+    const std::vector<Box> *collision_boxes = nullptr;
     bool collision = false;
 
 public:
-    Camera (fcg::Shaders& shaders_bianco, fcg::Shaders& shaders_colorato)
+    Camera(fcg::Shaders &shaders_bianco, fcg::Shaders &shaders_colorato)
     {
-        locations (shaders_bianco, shaders_colorato);
-        lens_normal ();
-        set_window_size (Setup::window_width, Setup::window_height);
-        view_projection ();
-        if (bianco)     send_parameters_bianco();
-        else    send_parameters_colorato();
+        locations(shaders_bianco, shaders_colorato);
+        lens_normal();
+        set_window_size(Setup::window_width, Setup::window_height);
+        view_projection();
+        if (bianco)
+            send_parameters_bianco();
+        else
+            send_parameters_colorato();
     }
 
-    void locations (fcg::Shaders& shaders_bianco, fcg::Shaders& shaders_colorato)
+    void locations(fcg::Shaders &shaders_bianco, fcg::Shaders &shaders_colorato)
     {
-        camera_pos_loc_bianco = glGetUniformLocation (shaders_bianco.program, "camera_pos");
-        camera_pos_loc_colorato = glGetUniformLocation (shaders_colorato.program, "camera_pos");
+        camera_pos_loc_bianco = glGetUniformLocation(shaders_bianco.program, "camera_pos");
+        camera_pos_loc_colorato = glGetUniformLocation(shaders_colorato.program, "camera_pos");
     }
 
-    GLint get_camera_pos_loc_bianco () { return camera_pos_loc_bianco; }
-    GLint get_camera_pos_loc_colorato () { return camera_pos_loc_colorato; }
-    glm::vec3 get_camera_pos () { return camera_pos; }
+    GLint get_camera_pos_loc_bianco() { return camera_pos_loc_bianco; }
+    GLint get_camera_pos_loc_colorato() { return camera_pos_loc_colorato; }
+    glm::vec3 get_camera_pos() { return camera_pos; }
     bool is_moving() const { return pan_tilt_on || move_on; }
 
     void set_window_size(int w, int h)
     {
-        ar = ((float) w) / (float) h;
-        view_projection ();
-        if (bianco)     send_parameters_bianco();
-        else    send_parameters_colorato();
-    }   
+        ar = ((float)w) / (float)h;
+        view_projection();
+        if (bianco)
+            send_parameters_bianco();
+        else
+            send_parameters_colorato();
+    }
 
-    bool pan_tilt_toggle ()
+    bool pan_tilt_toggle()
     {
         return pan_tilt_on = !pan_tilt_on;
     }
 
-    void pan_tilt (float dx, float dy)
+    void pan_tilt(float dx, float dy)
     {
         if (!pan_tilt_on)
             return;
 
         phi_deg += dx * 0.1;
         theta_deg += dy * 0.1;
-        theta_deg = theta_deg > 90.0? 90.0 : theta_deg;
-        theta_deg = theta_deg < -90.0? -90.0 : theta_deg;
-        view_projection ();
-        if (bianco)     send_parameters_bianco();
-        else    send_parameters_colorato();
+        theta_deg = theta_deg > 90.0 ? 90.0 : theta_deg;
+        theta_deg = theta_deg < -90.0 ? -90.0 : theta_deg;
+        view_projection();
+        if (bianco)
+            send_parameters_bianco();
+        else
+            send_parameters_colorato();
     }
 
-    void set_collision_boxes (const std::vector<Box>& boxes)
+    void set_collision_boxes(const std::vector<Box> &boxes)
     {
         collision_boxes = &boxes;
     }
 
-    bool collision_happened () const
+    bool collision_happened() const
     {
         return collision;
     }
 
-    void clear_collision_feedback ()
+    void clear_collision_feedback()
     {
         collision = false;
     }
 
-    bool collides (const glm::vec3& position) const
+    bool collides(const glm::vec3 &position) const
     {
         if (collision_boxes == nullptr)
             return false;
 
-        for (const Box& box : *collision_boxes)
+        for (const Box &box : *collision_boxes)
         {
             if (box.contains(position))
                 return true;
@@ -332,40 +337,58 @@ public:
         return false;
     }
 
-    void move_start (bool add)
+    void move_start(bool add)
     {
         move_add = add;
         move_on = true;
     }
 
-    void move_stop ()
+    void move_stop()
     {
         move_on = false;
     }
 
     // move
-    void move (float delta)
+    void move(float delta)
     {
         if (!move_on)   return;
+        float phi_rad   = glm::radians(phi_deg + 90.0f);
+        float theta_rad = glm::radians(theta_deg);
 
-        glm::vec3 candidate = camera_pos;
+        glm::vec3 forward_dir;
+        forward_dir.x = glm::cos(theta_rad) * glm::cos(phi_rad);
+        forward_dir.y = glm::sin(theta_rad);
+        forward_dir.z = glm::cos(theta_rad) * glm::sin(phi_rad);
+        forward_dir = glm::normalize(forward_dir);
+
+        glm::vec3 right_dir;
+        right_dir.x = -glm::sin(phi_rad);
+        right_dir.y = 0.0f;
+        right_dir.z =  glm::cos(phi_rad);
+        right_dir = glm::normalize(right_dir);
+
+        glm::vec3 up_dir = glm::cross(right_dir, forward_dir);
+        up_dir = glm::normalize(up_dir);
+
+        glm::vec3 movement;
         if (asse == 1)
         {
-            if (move_add)    candidate.x += delta;
-            else            candidate.x -= delta;
+            if (move_add)    movement = delta * right_dir;
+            else            movement = -delta * right_dir;
         }
-        if (asse == 2)
+        else if (asse == 2)
         {
-            if (move_add)    candidate.y += delta;
-            else            candidate.y -= delta;
+            if (move_add)    movement = delta * up_dir;
+            else            movement = -delta * up_dir;
 
         }
-        if (asse == 3)
+        else if (asse == 3)
         {
-            if (move_add)    candidate.z += delta;
-            else            candidate.z -= delta;
+            if (move_add)    movement = delta * forward_dir;
+            else            movement = -delta * forward_dir;
         }
 
+        glm::vec3 candidate = camera_pos + movement;
         // Calcola la posizione che raggiungeremmo durante questo frame. // Non entrare nel riquadro di delimitazione di un oggetto fisso.
         if (collides(candidate))
         {
@@ -374,17 +397,21 @@ public:
         }
         collision = false;
         camera_pos = candidate;
-        view_projection ();
-        if (bianco)     send_parameters_bianco();
-        else    send_parameters_colorato();
+        view_projection();
+        if (bianco)
+            send_parameters_bianco();
+        else
+            send_parameters_colorato();
     }
 
-    void lens_normal ()
+    void lens_normal()
     {
         fd = normal_fd;
-        view_projection ();
-        if (bianco)     send_parameters_bianco();
-        else    send_parameters_colorato();
+        view_projection();
+        if (bianco)
+            send_parameters_bianco();
+        else
+            send_parameters_colorato();
     }
 
     void set_default ()
@@ -401,40 +428,39 @@ public:
         collision = false;
     }
 
-    void view_projection ()
+    void view_projection()
     {
         float ncp = 0.1f;
         float fcp = 100.0f;
 
         // prepare rotations and translation matrices
-        glm::mat4 ry = fcg::rotation_y (phi_deg);
-        glm::mat4 rx = fcg::rotation_x (theta_deg);
-        glm::mat4 t = fcg::translation (-camera_pos.x, -camera_pos.y, -camera_pos.z);
+        glm::mat4 ry = fcg::rotation_y(phi_deg);
+        glm::mat4 rx = fcg::rotation_x(theta_deg);
+        glm::mat4 t = fcg::translation(-camera_pos.x, -camera_pos.y, -camera_pos.z);
 
         // prepare projection matrix
-        float a = (fcp + ncp) / (ncp - fcp);       // coefficient 3rd col
-        float b = 2.0 * fcp * ncp / (ncp - fcp);   // coefficient 4th col
+        float a = (fcp + ncp) / (ncp - fcp);     // coefficient 3rd col
+        float b = 2.0 * fcp * ncp / (ncp - fcp); // coefficient 4th col
 
         glm::mat4 pr = glm::mat4(
-                                 fd,  0.0, 0.0,  0.0,    // 1st column
-                                 0.0,  fd * ar, 0.0,  0.0,    // 2nd column
-                                 0.0, 0.0,   a, -1.0,    // 3rd column
-                                 0.0, 0.0,   b,  0.0     // 4th column
-                                 );
+            fd, 0.0, 0.0, 0.0,      // 1st column
+            0.0, fd * ar, 0.0, 0.0, // 2nd column
+            0.0, 0.0, a, -1.0,      // 3rd column
+            0.0, 0.0, b, 0.0        // 4th column
+        );
 
         // Compute VP matrix and update it
         v = rx * ry * t;
         vp = pr * v;
-        inv_v = glm::inverse (v);
-
+        inv_v = glm::inverse(v);
     }
 
-    void send_parameters_bianco ()
+    void send_parameters_bianco()
     {
         glUniform3fv(camera_pos_loc_bianco, 1, &camera_pos[0]);
     }
 
-    void send_parameters_colorato ()
+    void send_parameters_colorato()
     {
         glUniform3fv(camera_pos_loc_colorato, 1, &camera_pos[0]);
     }
@@ -463,43 +489,44 @@ private:
     bool initialized = false;
 
 public:
-    GPUMesh (std::string filename){ load (filename); }
+    GPUMesh(std::string filename) { load(filename); }
 
-    ~GPUMesh () { clean (); }
+    ~GPUMesh() { clean(); }
 
-    void load (std::string filename)
+    void load(std::string filename)
     {
-        fcg::Mesh mesh (filename);
-        mesh.pack4gpu (points, indices);
-        send_arrays_2a3f ();
+        fcg::Mesh mesh(filename);
+        mesh.pack4gpu(points, indices);
+        send_arrays_2a3f();
 
         min_bounds = mesh.min_bounds;
         max_bounds = mesh.max_bounds;
         center = (min_bounds + max_bounds) * 0.5f;
-        span = glm::distance (max_bounds, min_bounds);
+        span = glm::distance(max_bounds, min_bounds);
         extent = max_bounds - min_bounds;
 
         to_unit_extent =
-            fcg::scaling (1.0 / glm::compMax (extent)) *
-            fcg::translation (-center);
+            fcg::scaling(1.0 / glm::compMax(extent)) *
+            fcg::translation(-center);
 
         unit_center = {0.0, 0.0, 0.0};
-        unit_span = glm::distance (extent, {0.0, 0.0, 0.0});
-        unit_extent = extent / glm::compMax (extent);
+        unit_span = glm::distance(extent, {0.0, 0.0, 0.0});
+        unit_extent = extent / glm::compMax(extent);
 
         initialized = true;
     }
 
-    void clean ()
+    void clean()
     {
-        if (initialized) {
-            glDeleteVertexArrays (1, &vao);
-            glDeleteBuffers (1, &vbo);
+        if (initialized)
+        {
+            glDeleteVertexArrays(1, &vao);
+            glDeleteBuffers(1, &vbo);
             glDeleteBuffers(1, &ebo);
         }
     }
 
-    Box world_bounds (const glm::mat4& model) const
+    Box world_bounds(const glm::mat4 &model) const
     {
         // 8 angoli del bounding box locale
         glm::vec3 corners[8] = {
@@ -510,8 +537,7 @@ public:
             {max_bounds.x, min_bounds.y, min_bounds.z},
             {max_bounds.x, min_bounds.y, max_bounds.z},
             {max_bounds.x, max_bounds.y, min_bounds.z},
-            {max_bounds.x, max_bounds.y, max_bounds.z}
-        };
+            {max_bounds.x, max_bounds.y, max_bounds.z}};
         glm::vec3 world_min = glm::vec3(model * glm::vec4(corners[0], 1.0f));
         glm::vec3 world_max = world_min;
 
@@ -525,42 +551,42 @@ public:
         return {world_min, world_max};
     }
 
-    void draw ()
+    void draw()
     {
-        glBindVertexArray (vao);
-        glDrawElements(GL_TRIANGLES, indices.size (), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(vao);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     }
 
-    std::vector<float> get_points() const { return points;}
-    std::vector<unsigned int> get_indices() const { return indices;}
+    std::vector<float> get_points() const { return points; }
+    std::vector<unsigned int> get_indices() const { return indices; }
 
 protected:
-    void send_arrays_2a3f ()
+    void send_arrays_2a3f()
     {
         // we want just one buffer, and we retrieve the name OpenGL assigns to it.
-        glGenBuffers (1, &vbo);
+        glGenBuffers(1, &vbo);
         // bind it as the current VBO
-        glBindBuffer (GL_ARRAY_BUFFER, vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         // transfer data from CPU RAM to GPU RAM.
-        glBufferData (GL_ARRAY_BUFFER, points.size () * sizeof (float), points.data (), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(float), points.data(), GL_STATIC_DRAW);
 
         // we want just one buffer container, and we retrieve the name OpenGL assigns to it.
-        glGenVertexArrays (1, &vao);
+        glGenVertexArrays(1, &vao);
         // bind it as the current vao.
-        glBindVertexArray (vao);
+        glBindVertexArray(vao);
 
         // Attribute 0: position (x, y, z)
-        glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray (0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
 
         // Attribute 1: 3 generic floats (u, v, w)
-        glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray (1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
 
-        glGenBuffers(1, &ebo); 
+        glGenBuffers(1, &ebo);
         // MUST be bound after the VAO's binding!
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size () * sizeof (unsigned int), indices.data (), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
     }
 };
 
@@ -568,8 +594,8 @@ class Scene
 {
 public:
     int level;
-    fcg::Shaders& shaders_bianco;
-    fcg::Shaders& shaders_colorato;
+    fcg::Shaders &shaders_bianco;
+    fcg::Shaders &shaders_colorato;
     Camera camera;
     Lights lights;
 
@@ -595,26 +621,26 @@ private:
     glm::mat4 bunny_model, wall_model, sphere_model;
 
 public:
-    Scene (std::string dirname, fcg::Shaders& shaders_bianco, fcg::Shaders& shaders_colorato, int n) :
-        shaders_bianco (shaders_bianco), 
-        shaders_colorato (shaders_colorato), 
-        camera (shaders_bianco, shaders_colorato), 
-        lights (shaders_bianco, shaders_colorato),
-        cube (dirname + "cube.off"),
-        bunny (dirname + "bunny.off"),
-        sphere (dirname + "sphere.off")
+    Scene(std::string dirname, fcg::Shaders &shaders_bianco, fcg::Shaders &shaders_colorato, int n) : 
+    shaders_bianco(shaders_bianco),
+    shaders_colorato(shaders_colorato),
+    camera(shaders_bianco, shaders_colorato),
+    lights(shaders_bianco, shaders_colorato),
+    cube(dirname + "cube.off"),
+    bunny(dirname + "bunny.off"),
+    sphere(dirname + "sphere.off")
     {
         level = n;
         locations();
-        update_all_bianco ();
-        build_collision_boxes ();
-        camera.set_collision_boxes (collision_boxes);
+        update_all_bianco();
+        build_collision_boxes();
+        camera.set_collision_boxes(collision_boxes);
     }
-    
+
     void locations()
     {
-        camera.locations (shaders_bianco, shaders_colorato);
-        lights.locations (shaders_bianco, shaders_colorato);
+        camera.locations(shaders_bianco, shaders_colorato);
+        lights.locations(shaders_bianco, shaders_colorato);
         model_loc_bianco = glGetUniformLocation(shaders_bianco.program, "model");
         vp_loc_bianco = glGetUniformLocation(shaders_bianco.program, "vp");
         tr_inv_model_loc_bianco = glGetUniformLocation(shaders_bianco.program, "tr_inv_model");
@@ -623,27 +649,27 @@ public:
         tr_inv_model_loc_colorato = glGetUniformLocation(shaders_colorato.program, "tr_inv_model");
     }
 
-    void update_all_bianco ()
+    void update_all_bianco()
     {
         shaders_bianco.use();
         camera.bianco = true;
-        camera.view_projection ();
+        camera.view_projection();
         lights.bianco = true;
-        lights.send_parameters_bianco ();
-        lights.send_position_relative (camera.inv_v);
+        lights.send_parameters_bianco();
+        lights.send_position_relative(camera.inv_v);
     }
 
-    void update_all_colorato ()
+    void update_all_colorato()
     {
         shaders_colorato.use();
         camera.bianco = false;
-        camera.view_projection ();
+        camera.view_projection();
         lights.bianco = false;
-        lights.send_parameters_colorato ();
-        lights.send_position_relative (camera.inv_v);
+        lights.send_parameters_colorato();
+        lights.send_position_relative(camera.inv_v);
     }
 
-    void update ()
+    void update()
     {
         if (camera.is_moving())
         {
@@ -656,23 +682,23 @@ public:
         else    update_all_bianco();
     }
 
-    void reload (int n)
+    void reload(int n)
     {
         level = n;
-        build_collision_boxes ();
-        camera.set_collision_boxes (collision_boxes); 
+        build_collision_boxes();
+        camera.set_collision_boxes(collision_boxes);
     }
 
-    void draw ()
+    void draw()
     {
         // Feedback di collisione: lampeggia lo sfondo di rosso per il fotogramma in cui
-        if (camera.collision_happened ())
-            glClearColor (1.0f, 0.0f, 0.0f, 1.0f);
+        if (camera.collision_happened())
+            glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         else
-            glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         // clear the buffers
-        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // the view-projection matrix is the same for all the scene
         // vp = Projection(prospettiva della telecamera) × View(posizione della telecamera)
@@ -681,19 +707,21 @@ public:
         {
             shaders_colorato.use();
             glUniformMatrix4fv(vp_loc_colorato, 1, GL_FALSE, &camera.vp[0][0]);
-            draw_bunny (bunny_model);
+            draw_bunny(bunny_model);
         }
-        else{
+        else
+        {
             shaders_bianco.use();
             glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
-            draw_bunny (bunny_model);
+            draw_bunny(bunny_model);
         }
-        if (level == 2){
+        if (level == 1 || level == 2)
+        {
             shaders_bianco.use();
             glUniformMatrix4fv(vp_loc_bianco, 1, GL_FALSE, &camera.vp[0][0]);
             draw_wall();
         }
-        else if(level == 3)
+        else if (level == 3)
         {
             if (sphere_hover)
             {
@@ -709,231 +737,243 @@ public:
             }
         }
 
-        camera.clear_collision_feedback ();
+        camera.clear_collision_feedback();
     }
 
-    void move_sphere (float delta)
+    void move_sphere(float delta)
     {
         if (!sphere_move_on || direzione == -1)
             return;
         else if (direzione == 1)
         {
-            glm::mat4 translate = fcg::translation (0, delta, 0);
+            glm::mat4 translate = fcg::translation(0, delta, 0);
             sphere_model = translate * sphere_model;
         }
         else if (direzione == 2)
         {
-            glm::mat4 translate = fcg::translation (0, -delta, 0);
+            glm::mat4 translate = fcg::translation(0, -delta, 0);
             sphere_model = translate * sphere_model;
         }
         else if (direzione == 3)
         {
-            glm::mat4 translate = fcg::translation (-delta, 0, 0);
+            glm::mat4 translate = fcg::translation(-delta, 0, 0);
             sphere_model = translate * sphere_model;
         }
         else if (direzione == 4)
         {
-            glm::mat4 translate = fcg::translation (delta, 0, 0);
+            glm::mat4 translate = fcg::translation(delta, 0, 0);
             sphere_model = translate * sphere_model;
         }
     }
 
-    bool mouse_su_bunny (sf::Vector2i position, sf::Vector2u window_size)
+    bool mouse_su_bunny(sf::Vector2i position, sf::Vector2u window_size)
     {
         float x =
-            2.0f * static_cast<float>(position.x)
-            / static_cast<float>(window_size.x) - 1.0f;
+            2.0f * static_cast<float>(position.x) / static_cast<float>(window_size.x) - 1.0f;
 
         float y =
-            1.0f - 2.0f * static_cast<float>(position.y)
-            / static_cast<float>(window_size.y);
+            1.0f - 2.0f * static_cast<float>(position.y) / static_cast<float>(window_size.y);
 
         glm::vec4 near_point(x, y, -1.0f, 1.0f);
-        glm::vec4 far_point (x, y,  1.0f, 1.0f);
+        glm::vec4 far_point(x, y, 1.0f, 1.0f);
 
         glm::mat4 inv_vp = glm::inverse(camera.vp);
 
         near_point = inv_vp * near_point;
-        far_point  = inv_vp * far_point;
+        far_point = inv_vp * far_point;
 
         near_point /= near_point.w;
-        far_point  /= far_point.w;
+        far_point /= far_point.w;
 
         glm::vec3 ray_origin = glm::vec3(near_point);
 
         glm::vec3 ray_direction =
             glm::normalize(
-                glm::vec3(far_point - near_point)
-            );
+                glm::vec3(far_point - near_point));
 
-        glm::mat4 inv_bunny = glm::inverse(bunny_model); 
-        glm::vec3 local_origin = glm::vec3( inv_bunny * glm::vec4(ray_origin, 1.0f) ); 
-        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_bunny * glm::vec4(ray_direction, 0.0f) ) );
+        glm::mat4 inv_bunny = glm::inverse(bunny_model);
+        glm::vec3 local_origin = glm::vec3(inv_bunny * glm::vec4(ray_origin, 1.0f));
+        glm::vec3 local_direction = glm::normalize(glm::vec3(inv_bunny * glm::vec4(ray_direction, 0.0f)));
 
-        const auto& points = bunny.get_points(); 
-        const auto& indices = bunny.get_indices(); 
-        for (size_t i = 0; i < indices.size(); i += 3) { 
-            unsigned int i0 = indices[i]; 
-            unsigned int i1 = indices[i + 1]; 
+        const auto &points = bunny.get_points();
+        const auto &indices = bunny.get_indices();
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            unsigned int i0 = indices[i];
+            unsigned int i1 = indices[i + 1];
             unsigned int i2 = indices[i + 2];
-            glm::vec3 v0( points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2] ); 
-            glm::vec3 v1( points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2] ); 
-            glm::vec3 v2( points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2] );
-            if (ray_triangle_intersection( local_origin, local_direction, v0, v1, v2)) 
-                { return true; }
+            glm::vec3 v0(points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2]);
+            glm::vec3 v1(points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2]);
+            glm::vec3 v2(points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2]);
+            if (ray_triangle_intersection(local_origin, local_direction, v0, v1, v2))
+            {
+                return true;
+            }
         }
 
         return false;
     }
 
-    bool mouse_su_sphere (sf::Vector2i position, sf::Vector2u window_size)
+    bool mouse_su_sphere(sf::Vector2i position, sf::Vector2u window_size)
     {
         float x =
-            2.0f * static_cast<float>(position.x)
-            / static_cast<float>(window_size.x) - 1.0f;
+            2.0f * static_cast<float>(position.x) / static_cast<float>(window_size.x) - 1.0f;
 
         float y =
-            1.0f - 2.0f * static_cast<float>(position.y)
-            / static_cast<float>(window_size.y);
+            1.0f - 2.0f * static_cast<float>(position.y) / static_cast<float>(window_size.y);
 
         glm::vec4 near_point(x, y, -1.0f, 1.0f);
-        glm::vec4 far_point (x, y,  1.0f, 1.0f);
+        glm::vec4 far_point(x, y, 1.0f, 1.0f);
 
         glm::mat4 inv_vp = glm::inverse(camera.vp);
 
         near_point = inv_vp * near_point;
-        far_point  = inv_vp * far_point;
+        far_point = inv_vp * far_point;
 
         near_point /= near_point.w;
-        far_point  /= far_point.w;
+        far_point /= far_point.w;
 
         glm::vec3 ray_origin = glm::vec3(near_point);
 
         glm::vec3 ray_direction =
             glm::normalize(
-                glm::vec3(far_point - near_point)
-            );
+                glm::vec3(far_point - near_point));
 
-        glm::mat4 inv_sphere = glm::inverse(sphere_model); 
-        glm::vec3 local_origin = glm::vec3( inv_sphere * glm::vec4(ray_origin, 1.0f) ); 
-        glm::vec3 local_direction = glm::normalize( glm::vec3( inv_sphere * glm::vec4(ray_direction, 0.0f) ) );
+        glm::mat4 inv_sphere = glm::inverse(sphere_model);
+        glm::vec3 local_origin = glm::vec3(inv_sphere * glm::vec4(ray_origin, 1.0f));
+        glm::vec3 local_direction = glm::normalize(glm::vec3(inv_sphere * glm::vec4(ray_direction, 0.0f)));
 
-        const auto& points = sphere.get_points(); 
-        const auto& indices = sphere.get_indices(); 
-        for (size_t i = 0; i < indices.size(); i += 3) { 
-            unsigned int i0 = indices[i]; 
-            unsigned int i1 = indices[i + 1]; 
+        const auto &points = sphere.get_points();
+        const auto &indices = sphere.get_indices();
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            unsigned int i0 = indices[i];
+            unsigned int i1 = indices[i + 1];
             unsigned int i2 = indices[i + 2];
-            glm::vec3 v0( points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2] ); 
-            glm::vec3 v1( points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2] ); 
-            glm::vec3 v2( points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2] );
-            if (ray_triangle_intersection( local_origin, local_direction, v0, v1, v2)) 
-                { return true; }
+            glm::vec3 v0(points[i0 * 6 + 0], points[i0 * 6 + 1], points[i0 * 6 + 2]);
+            glm::vec3 v1(points[i1 * 6 + 0], points[i1 * 6 + 1], points[i1 * 6 + 2]);
+            glm::vec3 v2(points[i2 * 6 + 0], points[i2 * 6 + 1], points[i2 * 6 + 2]);
+            if (ray_triangle_intersection(local_origin, local_direction, v0, v1, v2))
+            {
+                return true;
+            }
         }
 
         return false;
     }
 
-private: 
-    void draw_bunny (glm::mat4 bunny_trasforme)
+private:
+    void draw_bunny(glm::mat4 bunny_trasforme)
     {
         glm::mat4 mm = bunny_trasforme;
-        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
+        glm::mat3 ti_mm = glm::transpose(glm::inverse(glm::mat3(mm)));
         if (!bunny_hover)
         {
             glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
-            glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
+            glUniformMatrix3fv(tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
         }
         else
         {
             glUniformMatrix4fv(model_loc_colorato, 1, GL_FALSE, &mm[0][0]);
-            glUniformMatrix3fv (tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
+            glUniformMatrix3fv(tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
         }
-        bunny.draw ();
+        bunny.draw();
     }
-    
-    void draw_cube (glm::mat4 cube_trasforme)
+
+    void draw_cube(glm::mat4 cube_trasforme)
     {
         glm::mat4 mm = cube_trasforme;
-        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));
+        glm::mat3 ti_mm = glm::transpose(glm::inverse(glm::mat3(mm)));
         glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
-        glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
-        cube.draw ();
+        glUniformMatrix3fv(tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
+        cube.draw();
     }
 
-    void draw_wall ()
+    void draw_wall()
     {
-        draw_cube (wall_model);
+        draw_cube(wall_model);
     }
 
-    void draw_sphere (glm::mat4 sphere_trasforme)
+    void draw_sphere(glm::mat4 sphere_trasforme)
     {
         glm::mat4 mm = sphere_trasforme;
-        glm::mat3 ti_mm = glm::transpose (glm::inverse (glm::mat3 (mm)));        
+        glm::mat3 ti_mm = glm::transpose(glm::inverse(glm::mat3(mm)));
         if (!sphere_hover)
         {
             glUniformMatrix4fv(model_loc_bianco, 1, GL_FALSE, &mm[0][0]);
-            glUniformMatrix3fv (tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
+            glUniformMatrix3fv(tr_inv_model_loc_bianco, 1, GL_FALSE, &ti_mm[0][0]);
         }
         else
         {
             glUniformMatrix4fv(model_loc_colorato, 1, GL_FALSE, &mm[0][0]);
-            glUniformMatrix3fv (tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
+            glUniformMatrix3fv(tr_inv_model_loc_colorato, 1, GL_FALSE, &ti_mm[0][0]);
         }
-        sphere.draw ();
+        sphere.draw();
     }
 
-    void build_collision_boxes ()
+    void build_collision_boxes()
     {
         glm::mat4 scale, translate;
-        collision_boxes.clear ();
+        collision_boxes.clear();
         if (level == 1)
         {
-            translate = fcg::translation (0, 0, 8.0f); // push it away
+            translate = fcg::translation(0, 0, 8.0f); // push it away
         }
         else
         {
-            translate = fcg::translation (0, 0, -3.0f); // push it away
+            translate = fcg::translation(0, 0, -3.0f); // push it away
         }
         bunny_model = translate * bunny.to_unit_extent;
         float margin = 0.5f;
         Box bunny_box = bunny.world_bounds(bunny_model);
         bunny_box = expand_box(bunny_box, margin);
-        collision_boxes.push_back (bunny_box);
-        
-        if (level == 2)
+        collision_boxes.push_back(bunny_box);
+
+        if (level == 1)
         {
-            // Dimensioni del muro: spessore, base, altezza
-            float depth = 1.0f;
-            float width = bunny.extent.x * 1.5;
-            float height = width *(3.0f/4.0f);
-            // draw back wall
-            scale = fcg::scaling (width, height, depth); // flatten the cube!
-            translate = fcg::translation (0, 0, -1.0f); // push it away
-            wall_model = translate * scale * cube.to_unit_extent;
+            float height = 0.1f;
+            float late = bunny.extent.x * 5;
+            // draw floor
+            scale = fcg::scaling (late, height, late); // flatten the cube!
+            translate = fcg::translation (0, -1.0f, 2.0f); // push it away
+            wall_model = translate * scale * cube.to_unit_extent;        
             float wall_margin = 1.5f;
             Box wall_box = cube.world_bounds(wall_model);
             wall_box = expand_box(wall_box, wall_margin);
             collision_boxes.push_back (wall_box);
         }
+        else if (level == 2)
+        {
+            // Dimensioni del muro: spessore, base, altezza
+            float depth = 1.0f;
+            float width = bunny.extent.x * 1.5;
+            float height = width * (3.0f / 4.0f);
+            // draw back wall
+            scale = fcg::scaling(width, height, depth); // flatten the cube!
+            translate = fcg::translation(0, 0, -1.0f);  // push it away
+            wall_model = translate * scale * cube.to_unit_extent;
+            float wall_margin = 1.5f;
+            Box wall_box = cube.world_bounds(wall_model);
+            wall_box = expand_box(wall_box, wall_margin);
+            collision_boxes.push_back(wall_box);
+        }
         else if (level == 3)
         {
-            translate = fcg::translation (0, 0, -1.0f); // push it away
-            scale = fcg::scaling (1.5f, 1.5f, 1.5f); // flatten the cube!
+            translate = fcg::translation(0, 0, -1.0f); // push it away
+            scale = fcg::scaling(1.5f, 1.5f, 1.5f);    // flatten the cube!
             sphere_model = translate * scale * sphere.to_unit_extent;
             Box sphere_box = sphere.world_bounds(sphere_model);
             sphere_box = expand_box(sphere_box, margin);
-            collision_boxes.push_back (sphere_box);
+            collision_boxes.push_back(sphere_box);
         }
     }
 };
-
 
 ////////////////////
 // SFML Callbacks //
 ////////////////////
 
-void handle (const sf::Event::KeyPressed& key, Scene& scene, Camera& camera)
+void handle(const sf::Event::KeyPressed &key, Scene &scene, Camera &camera)
 {
     if (key.scancode == sf::Keyboard::Scancode::Escape)
     {
@@ -961,48 +1001,52 @@ void handle (const sf::Event::KeyPressed& key, Scene& scene, Camera& camera)
     else if (key.scancode == sf::Keyboard::Scancode::Right)
     {
         scene.camera.asse = 1;
-        scene.camera.move_start(true);
+        scene.camera.move_start(false);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Left)
     {
         scene.camera.asse = 1;
-        scene.camera.move_start(false);
+        scene.camera.move_start(true);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Up)
     {
-        scene.camera.asse = 2;
-        scene.camera.move_start(true);
+        scene.camera.asse = 3;
+        scene.camera.move_start(false);
     }
     else if (key.scancode == sf::Keyboard::Scancode::Down)
     {
-        scene.camera.asse = 2;
-        scene.camera.move_start(false);
-    }
-    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
-    {
         scene.camera.asse = 3;
         scene.camera.move_start(true);
     }
+    else if (key.scancode == sf::Keyboard::Scancode::Space) // allontanare oggetto
+    {
+        scene.camera.asse = 2;
+        scene.camera.move_start(false);
+    }
     else if (key.scancode == sf::Keyboard::Scancode::Enter) // avvicinare oggetto
     {
-        scene.camera.asse = 3;
-        scene.camera.move_start(false);
+        scene.camera.asse = 2;
+        scene.camera.move_start(true);
     }
     else if (key.scancode == sf::Keyboard::Scancode::W)
     {
-        if (scene.sphere_move_on)     scene.direzione = 1;
+        if (scene.sphere_move_on)
+            scene.direzione = 1;
     }
     else if (key.scancode == sf::Keyboard::Scancode::S)
     {
-        if (scene.sphere_move_on)     scene.direzione = 2;
+        if (scene.sphere_move_on)
+            scene.direzione = 2;
     }
     else if (key.scancode == sf::Keyboard::Scancode::A)
     {
-        if (scene.sphere_move_on)     scene.direzione = 3;
+        if (scene.sphere_move_on)
+            scene.direzione = 3;
     }
     else if (key.scancode == sf::Keyboard::Scancode::D)
     {
-        if (scene.sphere_move_on)     scene.direzione = 4;
+        if (scene.sphere_move_on)
+            scene.direzione = 4;
     }
     else if (key.scancode == sf::Keyboard::Scancode::H)
     {
@@ -1015,26 +1059,26 @@ void handle (const sf::Event::KeyPressed& key, Scene& scene, Camera& camera)
     }
 }
 
-void handle (const sf::Event::KeyReleased& key, Scene& scene)
+void handle(const sf::Event::KeyReleased &key, Scene &scene)
 {
-    if (key.scancode == sf::Keyboard::Scancode::Right
-        || key.scancode == sf::Keyboard::Scancode::Left
-        || key.scancode == sf::Keyboard::Scancode::Up
-        || key.scancode == sf::Keyboard::Scancode::Down
-        || key.scancode == sf::Keyboard::Scancode::Enter
-        || key.scancode == sf::Keyboard::Scancode::Space)
+    if (key.scancode == sf::Keyboard::Scancode::Right 
+        || key.scancode == sf::Keyboard::Scancode::Left 
+        || key.scancode == sf::Keyboard::Scancode::Up 
+        || key.scancode == sf::Keyboard::Scancode::Down 
+        || key.scancode == sf::Keyboard::Scancode::Space 
+        || key.scancode == sf::Keyboard::Scancode::Enter)
     {
         scene.camera.move_stop();
     }
 }
 
-void handle (const sf::Event::Resized& resized, Camera& camera)
+void handle(const sf::Event::Resized &resized, Camera &camera)
 {
-    glViewport (0, 0, resized.size.x, resized.size.y);
-    camera.set_window_size (resized.size.x, resized.size.y);
+    glViewport(0, 0, resized.size.x, resized.size.y);
+    camera.set_window_size(resized.size.x, resized.size.y);
 }
 
-void handle (const sf::Event::MouseMoved& mouse_moved, sf::Window& window, Scene& scene)
+void handle(const sf::Event::MouseMoved &mouse_moved, sf::Window &window, Scene &scene)
 {
     // reset
     scene.bunny_hover = false;
@@ -1046,22 +1090,24 @@ void handle (const sf::Event::MouseMoved& mouse_moved, sf::Window& window, Scene
 
     if (scene.level == 3)
     {
-        scene.sphere_hover = scene.mouse_su_sphere (mouse_moved.position, window.getSize());
+        scene.sphere_hover = scene.mouse_su_sphere(mouse_moved.position, window.getSize());
     }
-    if (!scene.sphere_hover)    scene.bunny_hover = scene.mouse_su_bunny (mouse_moved.position, window.getSize());
+    if (!scene.sphere_hover)
+        scene.bunny_hover = scene.mouse_su_bunny(mouse_moved.position, window.getSize());   
 }
 
-void handle (sf::Vector2f delta, Camera& camera)
+void handle(sf::Vector2f delta, Camera &camera)
 {
-    camera.pan_tilt (delta.x, delta.y);
+    camera.pan_tilt(delta.x, delta.y);
 }
 
-void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera, sf::Window& window, Scene& scene)
+void handle(const sf::Event::MouseButtonPressed &mouse_pressed, Camera &camera, sf::Window &window, Scene &scene)
 {
-    if (mouse_pressed.button == sf::Mouse::Button::Left) {
-        bool pan_tilt_on = camera.pan_tilt_toggle ();
-        window.setMouseCursorGrabbed (pan_tilt_on);
-        window.setMouseCursorVisible (!pan_tilt_on);
+    if (mouse_pressed.button == sf::Mouse::Button::Left)
+    {
+        bool pan_tilt_on = camera.pan_tilt_toggle();
+        window.setMouseCursorGrabbed(pan_tilt_on);
+        window.setMouseCursorVisible(!pan_tilt_on);
     }
     else if (mouse_pressed.button == sf::Mouse::Button::Right)
     {
@@ -1069,14 +1115,14 @@ void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera,
         {
             if (!scene.sphere_move_on)
                 scene.sphere_move_on = scene.sphere_hover;
-            else{
+            else
+            {
                 scene.sphere_move_on = false;
                 scene.direzione = -1;
             }
         }
-        if (!scene.sphere_hover && scene.bunny_hover){
+        if (!scene.sphere_hover && scene.bunny_hover)
             std::cout<<"COMPLIMENTI! hai trovato il coniglio"<<std::endl;
-        }
     }
 }
 
@@ -1084,7 +1130,7 @@ void handle (const sf::Event::MouseButtonPressed& mouse_pressed, Camera& camera,
 // Main //
 //////////
 
-int main ()
+int main()
 {
     std::cout << "Benvenuto al gioco" << std::endl;
     std::cout << "L'obiettivo del gioco è trovare il coniglio" << std::endl;
@@ -1093,49 +1139,50 @@ int main ()
     std::cout << "Premi il tasto H per ottenere aiuto" << std::endl;
     
     Setup setup;
-    sf::Window& window = setup.window;
+    sf::Window &window = setup.window;
 
-    fcg::Shaders shaders_bianco ("shader/shader_flat.vert", "shader/shader_flat.frag");
-    fcg::Shaders shaders_colorato ("shader/shader_normals.vert", "shader/shader_normals.frag");
+    fcg::Shaders shaders_bianco("shader/shader_flat.vert", "shader/shader_flat.frag");
+    fcg::Shaders shaders_colorato("shader/shader_normals.vert", "shader/shader_normals.frag");
     shaders_bianco.use();
-    Scene scene ("data/", shaders_bianco, shaders_colorato, 3);
+    Scene scene("data/", shaders_bianco, shaders_colorato, 3);
 
-    glEnable (GL_CULL_FACE);
-    glCullFace (GL_BACK);
-    glEnable (GL_DEPTH_TEST);
 
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glEnable(GL_DEPTH_TEST);
+    
     sf::Clock clock;
     bool running = true;
     fcg::RawMouse raw_mouse;
-    while(running)
+    while (running)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        while (const std::optional event = window.pollEvent ())
+        while (const std::optional event = window.pollEvent())
         {
-            if (event->is<sf::Event::Closed> ())
+            if (event->is<sf::Event::Closed>())
                 running = false;
-            else if(const auto* resized = event->getIf<sf::Event::Resized> ())
-                handle (* resized, scene.camera);
-            else if(const auto* key_pressed = event->getIf<sf::Event::KeyPressed> ())
-                handle (* key_pressed, scene, scene.camera);
-            else if (const auto* key_released = event->getIf<sf::Event::KeyReleased> ())
-                handle (*key_released, scene);
-            else if(const auto* mouse_moved = event->getIf<sf::Event::MouseMoved> ())
-                handle (* mouse_moved, window, scene);
-            else if (const auto* mouse_pressed = event->getIf<sf::Event::MouseButtonPressed> ())
-                handle (*mouse_pressed, scene.camera, window, scene);
-            else if (const auto* mouse_moved_raw = event->getIf<sf::Event::MouseMovedRaw> ())
-                raw_mouse.event (*mouse_moved_raw);
+            else if (const auto *resized = event->getIf<sf::Event::Resized>())
+                handle(*resized, scene.camera);
+            else if (const auto *key_pressed = event->getIf<sf::Event::KeyPressed>())
+                handle(*key_pressed, scene, scene.camera);
+            else if (const auto *key_released = event->getIf<sf::Event::KeyReleased>())
+                handle(*key_released, scene);
+            else if (const auto *mouse_moved = event->getIf<sf::Event::MouseMoved>())
+                handle(*mouse_moved, window, scene);
+            else if (const auto *mouse_pressed = event->getIf<sf::Event::MouseButtonPressed>())
+                handle(*mouse_pressed, scene.camera, window, scene);
+            else if (const auto *mouse_moved_raw = event->getIf<sf::Event::MouseMovedRaw>())
+                raw_mouse.event(*mouse_moved_raw);
         }
 
         scene.update();
-        handle (raw_mouse.delta (), scene.camera);
-
+        handle(raw_mouse.delta(), scene.camera);
+            
         float elapsed = clock.restart().asSeconds();
-        scene.camera.move (elapsed);
-        scene.move_sphere (elapsed/3);
-    
-        scene.draw();    
+        scene.camera.move(elapsed);
+        scene.move_sphere(elapsed / 3);
+
+        scene.draw();
         window.display();
     }
 }
