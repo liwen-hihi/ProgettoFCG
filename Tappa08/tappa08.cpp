@@ -930,7 +930,7 @@ private:
             scale = fcg::scaling (late, height, late); // flatten the cube!
             translate = fcg::translation (0, -1.0f, 2.0f); // push it away
             wall_model = translate * scale * cube.to_unit_extent;
-            add_box_with_margin (wall_model, wall_margin, 2);
+            add_box_with_margin (wall_model, 0.8f, 2);
         }
         else if (level == 2)
         {

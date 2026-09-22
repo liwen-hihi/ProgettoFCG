@@ -781,7 +781,7 @@ private:
             scale = fcg::scaling (late, height, late); // flatten the cube!
             translate = fcg::translation (0, -1.0f, 2.0f); // push it away
             wall_model = translate * scale * cube.to_unit_extent;
-            float wall_margin = 1.5f;
+            float wall_margin = 0.8f;
             Box wall_box = cube.world_bounds(wall_model);
             wall_box = expand_box(wall_box, wall_margin);
             collision_boxes.push_back (wall_box);

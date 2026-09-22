@@ -985,7 +985,7 @@ private:
             scale = fcg::scaling (late, height, late); // flatten the cube!
             translate = fcg::translation (0, -1.0f, 2.0f); // push it away
             wall_model = translate * scale * cube.to_unit_extent;
-            add_box_with_margin (wall_model, wall_margin, 2);
+            add_box_with_margin (wall_model, roomB_margin, 2);
         }
         else if (level == 2)
         {
@@ -1054,13 +1054,13 @@ private:
             float side = cube.extent.y *1.5; // side of del cube
 
             // draw ceiling
-            scale = fcg::scaling (side, depth, side); // flatten the cube!
+            scale = fcg::scaling (side+1, depth, side+1); // flatten the cube!
             translate = fcg::translation (-side/2, 4.0, 5.0f-side/2); // lower it up
             roomA_p1 = translate * scale;
             add_box_with_margin (roomA_p1, roomB_margin, 2);
 
             // draw floor
-            scale = fcg::scaling (side, depth, side); // flatten the cube!
+            scale = fcg::scaling (side+1, depth, side+1); // flatten the cube!
             translate = fcg::translation (-side/2, -4.0, 5.0f-side/2); // lower it down
             roomA_p2 = translate * scale;
             add_box_with_margin (roomA_p2, roomB_margin, 2);
