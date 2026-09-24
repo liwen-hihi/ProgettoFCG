@@ -92,8 +92,6 @@ class Setup
 public:
     static const int window_width = 800;
     static const int window_height = 600;
-    static const int min_window_width = 400;
-    static const int min_window_height = 300;
 
     sf::Window window;
 

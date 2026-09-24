@@ -88,8 +88,6 @@ class Setup
 public:
     static const int window_width = 800;
     static const int window_height = 600;
-    static const int min_window_width = 400;
-    static const int min_window_height = 300;
 
     sf::Window window;
 
@@ -272,9 +270,6 @@ public:
         camera_pos_loc_colorato = glGetUniformLocation(shaders_colorato.program, "camera_pos");
     }
 
-    GLint get_camera_pos_loc_bianco() { return camera_pos_loc_bianco; }
-    GLint get_camera_pos_loc_colorato() { return camera_pos_loc_colorato; }
-    glm::vec3 get_camera_pos() { return camera_pos; }
     bool is_moving() const { return pan_tilt_on || move_on; }
 
     void set_window_size(int w, int h)
